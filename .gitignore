@@ -1,0 +1,6 @@
+node_modules/
+.env
+dist/
+*.log
+# Très important : ne jamais push ta clé serviceAccount Firebase
+serviceAccountKey.json

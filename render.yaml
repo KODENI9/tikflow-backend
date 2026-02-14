@@ -1,10 +1,11 @@
 services:
   - type: web
-    name: tikflow-backend
+    name: tikflow-api-backend
     env: node
     plan: free
     buildCommand: npm install && npm run build
     startCommand: npm start
+    healthCheckPath: /health
     envVars:
       - key: PORT
         value: 10000

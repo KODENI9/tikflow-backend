@@ -1,52 +1,24 @@
 // src/controllers/sms.controller.ts
-import { Request, Response } from 'express';
-import { db } from '../config/firebase';
+import { Request, Response, NextFunction } from 'express';
+import { SmsService } from '../services/sms.service';
 
-const OFFICIAL_SENDERS = ['TMoney', 'Flooz', 'MoovMoney', '0000']; // À adapter selon ton pays
+export const handleSMSWebhook = async (req: Request, res: Response, next: NextFunction) => {
+    console.log("📨 Webhook SMS reçu Payload:", JSON.stringify(req.body, null, 2));
 
-export const handleSMSWebhook = async (req: Request, res: Response) => {
     try {
-        const { message, from } = req.body; // 'message' est le texte du SMS
+        const sender = req.body.from || req.body.sender;
+        const rawContent = req.body.message || req.body.content;
 
-        if (!message) {
-            res.status(400).send("No message found");
-            return;
-        }
+        const result = await SmsService.handleSMSWebhook(sender, rawContent);
 
-        if (!OFFICIAL_SENDERS.includes(from)) {
-        console.log(`🚨 Tentative de fraude : SMS reçu de ${from} au lieu d'un service officiel.`);
-        res.status(403).json({ message: "Expéditeur non autorisé" });
-        return;
-        }
-
-        let ref_id = "";
-        let amount = 0;
-
-
-        // Regex Robuste pour extraire Montant et Ref
-        const amountMatch = message.match(/(?:recu|de)\s+(\d+)\s*(?:F|FCFA)/i);
-        const refMatch = message.match(/(?:Ref:|ID:)\s*(\d+)/i);
-
-        if (amountMatch) amount = Number(amountMatch[1]);
-        if (refMatch) ref_id = refMatch[1];
-
-        if (ref_id && amount > 0) {
-            // Vérifier les doublons
-            const dup = await db.collection('received_payments').where('ref_id', '==', ref_id).get();
-            if (!dup.empty) return res.status(200).send("Duplicate");
-
-            await db.collection('received_payments').add({
-                ref_id, amount, sender_phone: from, raw_sms: message,
-                status: 'unused', received_at: new Date()
-            });
-            res.status(200).json({ success: true, ref_id });
+        if (result.status === "duplicate" || result.status === "parsing_failed") {
+             // On renvoie 200 pour dire au service SMS "J'ai bien reçu" ou "J'ai géré le doublon"
+             res.status(200).send(result.message);
         } else {
-            console.log("⚠️ SMS reçu mais non reconnu comme un paiement.");
-            res.status(200).send("SMS ignored (Not a payment)");
+             res.status(200).json({ success: true, ref_id: result.ref_id, amount: result.amount });
         }
 
-    } catch (error: any) {
-        res.status(500).json({ success: false, error: error.message });
+    } catch (error) {
+        next(error);
     }
 };
-

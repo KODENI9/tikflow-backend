@@ -6,6 +6,8 @@ export interface User {
     phone_number?: string;   // Optionnel au début
     role: 'client' | 'admin';
     status: 'active' | 'suspended';
+    tiktok_username?: string;
+    tiktok_password?: string;
     last_login: Date;
     created_at: Date;
     updated_at: Date;

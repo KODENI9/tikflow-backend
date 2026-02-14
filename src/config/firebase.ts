@@ -4,15 +4,29 @@ import dotenv from 'dotenv';
 
 dotenv.config();
 
-// Pour la sécurité, on récupère les infos du JSON via des variables d'environnement
-// ou on importe directement le fichier JSON en local (méthode simple pour le dev)
-const serviceAccount = require('../../serviceAccountKey.json');
+let serviceAccount;
+
+if (process.env.FIREBASE_SERVICE_ACCOUNT) {
+    try {
+        serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
+    } catch (error) {
+        console.error("❌ Erreur de parsing de FIREBASE_SERVICE_ACCOUNT:", error);
+    }
+} else {
+    try {
+        serviceAccount = require('../../serviceAccountKey.json');
+    } catch (error) {
+        console.warn("⚠️ serviceAccountKey.json non trouvé (normal en production)");
+    }
+}
 
 if (!admin.apps.length) {
     try {
+        if (!serviceAccount) {
+            throw new Error("Aucune configuration Firebase trouvée (variable d'env ou JSON)");
+        }
         admin.initializeApp({
             credential: admin.credential.cert(serviceAccount as admin.ServiceAccount),
-            // databaseURL: "https://ton-projet.firebaseio.com" // Optionnel pour Firestore
         });
         console.log("🔥 Firebase Admin initialisé avec succès");
     } catch (error) {

@@ -11,5 +11,7 @@ export interface Transaction {
     tiktok_password?: string; // Si vraiment nécessaire
     status: 'pending' | 'completed' | 'rejected' | 'failed';
     admin_note?: string;     // Pour dire pourquoi c'est rejeté par exemple
+    requires_code?: boolean; // Si l'admin attend un code Gmail
+    confirmation_code?: string; // Code fourni par le user
     created_at: Date;
 }

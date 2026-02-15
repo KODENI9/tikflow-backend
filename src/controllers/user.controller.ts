@@ -27,8 +27,10 @@ export const syncUser = async (req: Request, res: Response, next: NextFunction) 
         const result = await UserService.syncUser(userId, email, fullname, phoneNumber);
 
         if (result.isNew) {
+            console.log(`✅ Nouvel utilisateur créé: ${userId} (${email})`);
             res.status(201).json({ success: true, message: "Utilisateur et Wallet créés", user: result.user });
         } else {
+            console.log(`🔄 Utilisateur synchronisé: ${userId} (${email})`);
             res.status(200).json({ success: true, message: "Utilisateur synchronisé" });
         }
     } catch (error) {

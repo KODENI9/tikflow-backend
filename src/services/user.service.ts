@@ -79,10 +79,17 @@ export class UserService {
 
             return { isNew: true, user: newUser };
         } else {
-            await userRef.update({
+            // Mise à jour des informations si elles sont fournies (pour combler les manques éventuels)
+            const updates: any = {
                 last_login: new Date(),
                 updated_at: new Date()
-            });
+            };
+
+            if (email) updates.email = email;
+            if (fullname) updates.fullname = fullname;
+            if (phoneNumber) updates.phone_number = phoneNumber;
+
+            await userRef.update(updates);
             return { isNew: false };
         }
     }

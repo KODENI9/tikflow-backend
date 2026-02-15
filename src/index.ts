@@ -32,7 +32,8 @@ const allowedOrigins = [
     process.env.FRONTEND_URL, 
     'http://localhost:3000', 
     'http://10.0.10.35:3000', 
-    'https://tikflow.com'
+    'https://tikflow.com',
+    'https://tikflow-frontend.vercel.app'
 ]; 
 app.use(cors({
     origin: (origin, callback) => {

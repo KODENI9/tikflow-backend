@@ -2,7 +2,7 @@
 import { Router } from 'express';
 import { requireAuth } from '../middlewares/auth';
 import { buyWithWallet} from '../controllers/order.controller';
-import { getPackages } from '../controllers/admin.controller';
+import { getPackages, getPackageById } from '../controllers/admin.controller';
 import { chargeWallet } from '../controllers/wallet.controller';
 
 import { validate } from '../middlewares/validation.middleware';
@@ -19,6 +19,7 @@ router.post('/ch_wallet', requireAuth, validate(chargeWalletSchema), chargeWalle
 
 // Route publique/client pour voir les prix
 router.get('/packages', getPackages);
+router.get('/packages/:id', getPackageById);
 
 export default router;
 

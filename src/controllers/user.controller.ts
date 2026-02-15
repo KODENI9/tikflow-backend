@@ -96,7 +96,7 @@ export const updatePhoneNumber = async (req: Request, res: Response, next: NextF
         const { phoneNumber } = req.body;
 
         await UserService.updatePhoneNumber(userId, phoneNumber);
-
+        res.status(200).json({ success: true, message: "Numéro de téléphone mis à jour" });
     } catch (error) {
         next(error);
     }

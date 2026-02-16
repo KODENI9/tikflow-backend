@@ -8,22 +8,35 @@ export class TransactionService {
     private static transactionsCollection = db.collection('transactions');
     private static walletsCollection = db.collection('wallets');
     private static packagesCollection = db.collection('packages');
+    private static COIN_RATE = 10;
 
-    static async  buyWithWallet(userId: string, packageId: string, tiktok_username: string, tiktok_password?: string) {
-        if (!packageId || !tiktok_username) { // Password might be optional depending on logic, keeping it strict for now if controller did
-             // Controller checked password, so I will too if it was required.
-             // Original: if (!packageId || !tiktok_username || !tiktok_password)
-             if (!tiktok_password) throw new AppError("Package ID, compte TikTok et mot de passe requis", 400); 
+    static async  buyWithWallet(userId: string, packageId: string | undefined, tiktok_username: string, tiktok_password?: string, amount_coins?: number) {
+        if ((!packageId && !amount_coins) || !tiktok_username) { 
+             throw new AppError("Package ID ou montant de coins, et compte TikTok requis", 400); 
         }
 
         const result = await db.runTransaction(async (t) => {
-            const pkgRef = this.packagesCollection.doc(packageId);
-            const pkgDoc = await t.get(pkgRef);
-            if (!pkgDoc.exists) throw new AppError("Le pack sélectionné n'existe pas.", 404);
+            let price: number;
+            let coins: number;
+            let rateUsed: number | undefined = undefined;
 
-            const pkgData = pkgDoc.data();
-            const price = pkgData?.price_cfa;
-            const coins = pkgData?.coins;
+            if (packageId) {
+                const pkgRef = this.packagesCollection.doc(packageId);
+                const pkgDoc = await t.get(pkgRef);
+                if (!pkgDoc.exists) throw new AppError("Le pack sélectionné n'existe pas.", 404);
+
+                const pkgData = pkgDoc.data();
+                price = pkgData?.price_cfa;
+                coins = pkgData?.coins;
+            } else {
+                // Achat personnalisé
+                if (!amount_coins || amount_coins < 30) {
+                    throw new AppError("Le montant minimum est de 30 coins.", 400);
+                }
+                coins = Math.floor(amount_coins);
+                price = coins * this.COIN_RATE;
+                rateUsed = this.COIN_RATE;
+            }
 
             const walletRef = this.walletsCollection.doc(userId);
             const walletDoc = await t.get(walletRef);
@@ -48,6 +61,7 @@ export class TransactionService {
                 tiktok_username,
                 tiktok_password,
                 status: 'pending',
+                rate_used: rateUsed,
                 created_at: new Date()
             };
 

@@ -5,10 +5,10 @@ import { TransactionService } from '../services/transaction.service';
 export const buyWithWallet = async (req: Request, res: Response, next: NextFunction) => {
     try {
         console.log("Buy With Wallet Payload:", req.body);
-        const { packageId, tiktok_username, tiktok_password } = req.body;
+        const { packageId, amount_coins, tiktok_username, tiktok_password } = req.body;
         const userId = req.auth.userId;
 
-        const result = await TransactionService.buyWithWallet(userId, packageId, tiktok_username, tiktok_password);
+        const result = await TransactionService.buyWithWallet(userId, packageId, tiktok_username, tiktok_password, amount_coins);
 
         res.status(200).json({
             success: true,

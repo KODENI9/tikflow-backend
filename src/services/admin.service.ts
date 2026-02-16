@@ -401,11 +401,19 @@ export class AdminService {
         if (activeOnly) {
             query = query.where('active', '==', true);
         }
-        const snapshot = await query.orderBy('created_at', 'desc').get();
-        return snapshot.docs.map((doc: any) => ({
+        
+        const snapshot = await query.get();
+        const results = snapshot.docs.map((doc: any) => ({
             id: doc.id,
             ...doc.data()
         }));
+
+        // Sort in memory to avoid needing a composite index in Firestore
+        return results.sort((a: any, b: any) => {
+            const dateA = a.created_at?.toDate?.() || new Date(a.created_at || 0);
+            const dateB = b.created_at?.toDate?.() || new Date(b.created_at || 0);
+            return dateB.getTime() - dateA.getTime();
+        });
     }
 
     static async updateRecipient(id: string, updates: Partial<Recipient>) {

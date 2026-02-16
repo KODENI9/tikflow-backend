@@ -1,6 +1,6 @@
 // src/routes/admin.routes.ts
 import { Router } from 'express';
-import { adjustUserBalance, createPackage, getAdminStats, getAllTransactions, getAllUsers, getPendingTransactions, getReceivedPayments, getTransactionById, updateTransactionStatus, verifyAndCredit, getPackages, getPackageById, requestCode, updatePackage, getAllPackagesAdmin, createRecipient, deleteRecipient, getRecipients, updateRecipient, getGlobalSettings, updateGlobalSettings } from '../controllers/admin.controller';
+import { adjustUserBalance, createPackage, getAdminStats, getAllTransactions, getAllUsers, getPendingTransactions, getReceivedPayments, getTransactionById, updateTransactionStatus, verifyAndCredit, getPackages, getPackageById, requestCode, updatePackage, getAllPackagesAdmin, createRecipient, deleteRecipient, getRecipients, updateRecipient, getGlobalSettings, updateGlobalSettings, sendUserNotification } from '../controllers/admin.controller';
 import { isAdmin, requireAuth } from '../middlewares/auth';
 import { handleSMSWebhook } from '../controllers/sms.controller';
 import { verifyWebhookKey } from '../middlewares/webhookGuard';
@@ -39,6 +39,7 @@ router.get('/stats', requireAuth, isAdmin, getAdminStats);
 
 router.get('/users', requireAuth, isAdmin, getAllUsers);
 router.patch('/users/:uid/adjust-balance', requireAuth, isAdmin, adjustUserBalance);
+router.post('/users/:uid/notify', requireAuth, isAdmin, sendUserNotification);
 
 router.get('/payments-log', requireAuth, isAdmin, getReceivedPayments);
 

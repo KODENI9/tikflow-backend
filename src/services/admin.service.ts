@@ -454,4 +454,13 @@ export class AdminService {
         }, { merge: true });
         return { success: true };
     }
+
+    static async sendUserNotification(userId: string, title: string, message: string) {
+        return await notificationService.create({
+            user_id: userId,
+            title,
+            message,
+            type: 'system_alert'
+        });
+    }
 }

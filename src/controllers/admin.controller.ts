@@ -206,3 +206,13 @@ export const updateGlobalSettings = async (req: Request, res: Response, next: Ne
         next(error);
     }
 };
+export const sendUserNotification = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const { uid } = req.params;
+        const { title, message } = req.body;
+        const id = await AdminService.sendUserNotification(uid as string, title, message);
+        res.status(201).json({ success: true, id: id });
+    } catch (error) {
+        next(error);
+    }
+};

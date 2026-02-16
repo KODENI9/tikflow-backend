@@ -439,7 +439,7 @@ export class AdminService {
         if (!doc.exists) {
             // Default settings if none exist
             return {
-                support_phone: "+228 90 51 32 79",
+                support_phone: "",
                 updated_at: new Date()
             };
         }

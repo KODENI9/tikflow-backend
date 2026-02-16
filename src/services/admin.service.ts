@@ -2,6 +2,7 @@
 import { db } from '../config/firebase';
 import { Transaction } from '../models/Transaction';
 import { ReceivedPayment } from '../models/ReceivedPayment';
+import { Recipient } from '../models/Recipient';
 import { AppError } from '../utils/AppError';
 import { notificationService } from './notification.service';
 
@@ -9,6 +10,7 @@ export class AdminService {
     private static transactionsCollection = db.collection('transactions');
     private static paymentsCollection = db.collection('received_payments');
     private static packagesCollection = db.collection('packages');
+    private static recipientsCollection = db.collection('recipients');
     private static walletsCollection = db.collection('wallets');
     private static usersCollection = db.collection('users');
     private static notificationsCollection = db.collection('notifications');
@@ -381,5 +383,44 @@ export class AdminService {
             id: doc.id,
             ...doc.data(),
         }));
+    }
+
+    // --- RECIPIENTS MANAGEMENT ---
+    static async createRecipient(data: Omit<Recipient, 'id' | 'created_at'>) {
+        const newRecipient = {
+            ...data,
+            active: data.active ?? true,
+            created_at: new Date()
+        };
+        const docRef = await this.recipientsCollection.add(newRecipient);
+        return docRef.id;
+    }
+
+    static async getRecipients(activeOnly: boolean = false) {
+        let query: any = this.recipientsCollection;
+        if (activeOnly) {
+            query = query.where('active', '==', true);
+        }
+        const snapshot = await query.orderBy('created_at', 'desc').get();
+        return snapshot.docs.map((doc: any) => ({
+            id: doc.id,
+            ...doc.data()
+        }));
+    }
+
+    static async updateRecipient(id: string, updates: Partial<Recipient>) {
+        const docRef = this.recipientsCollection.doc(id);
+        const doc = await docRef.get();
+        if (!doc.exists) throw new AppError("Destinataire non trouvé", 404);
+
+        await docRef.update({
+            ...updates,
+            updated_at: new Date()
+        });
+    }
+
+    static async deleteRecipient(id: string) {
+        const docRef = this.recipientsCollection.doc(id);
+        await docRef.delete();
     }
 }

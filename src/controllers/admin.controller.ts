@@ -147,3 +147,43 @@ export const requestCode = async (req: Request, res: Response, next: NextFunctio
         next(error);
     }
 };
+
+// --- RECIPIENTS ---
+export const createRecipient = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const id = await AdminService.createRecipient(req.body);
+        res.status(201).json({ success: true, id: id });
+    } catch (error) {
+        next(error);
+    }
+};
+
+export const getRecipients = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const activeOnly = req.query.active === 'true';
+        const recipients = await AdminService.getRecipients(activeOnly);
+        res.status(200).json({ success: true, data: recipients });
+    } catch (error) {
+        next(error);
+    }
+};
+
+export const updateRecipient = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const { id } = req.params;
+        await AdminService.updateRecipient(id as string, req.body);
+        res.status(200).json({ success: true });
+    } catch (error) {
+        next(error);
+    }
+};
+
+export const deleteRecipient = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const { id } = req.params;
+        await AdminService.deleteRecipient(id as string);
+        res.status(200).json({ success: true });
+    } catch (error) {
+        next(error);
+    }
+};

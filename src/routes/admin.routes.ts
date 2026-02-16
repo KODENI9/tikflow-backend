@@ -1,6 +1,6 @@
 // src/routes/admin.routes.ts
 import { Router } from 'express';
-import { adjustUserBalance, createPackage, getAdminStats, getAllTransactions, getAllUsers, getPendingTransactions, getReceivedPayments, getTransactionById, updateTransactionStatus, verifyAndCredit, getPackages, getPackageById, requestCode, updatePackage, getAllPackagesAdmin } from '../controllers/admin.controller';
+import { adjustUserBalance, createPackage, getAdminStats, getAllTransactions, getAllUsers, getPendingTransactions, getReceivedPayments, getTransactionById, updateTransactionStatus, verifyAndCredit, getPackages, getPackageById, requestCode, updatePackage, getAllPackagesAdmin, createRecipient, deleteRecipient, getRecipients, updateRecipient } from '../controllers/admin.controller';
 import { isAdmin, requireAuth } from '../middlewares/auth';
 import { handleSMSWebhook } from '../controllers/sms.controller';
 import { verifyWebhookKey } from '../middlewares/webhookGuard';
@@ -45,5 +45,11 @@ router.get('/payments-log', requireAuth, isAdmin, getReceivedPayments);
 // Route pour le bouton "Valider" du Dashboard Admin
 // router.patch('/verify-smart/:transactionId', requireAuth, isAdmin, verifyAndCredit);
 router.patch('/verify-smart/:transactionId', requireAuth, isAdmin, updateTransactionStatus);
+
+// Management of payment recipients (phones)
+router.post('/recipients', requireAuth, isAdmin, createRecipient);
+router.get('/recipients', requireAuth, isAdmin, getRecipients);
+router.patch('/recipients/:id', requireAuth, isAdmin, updateRecipient);
+router.delete('/recipients/:id', requireAuth, isAdmin, deleteRecipient);
 
 export default router;

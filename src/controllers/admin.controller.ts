@@ -187,3 +187,22 @@ export const deleteRecipient = async (req: Request, res: Response, next: NextFun
         next(error);
     }
 };
+
+// --- GLOBAL SETTINGS ---
+export const getGlobalSettings = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const settings = await AdminService.getGlobalSettings();
+        res.status(200).json({ success: true, data: settings });
+    } catch (error) {
+        next(error);
+    }
+};
+
+export const updateGlobalSettings = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        await AdminService.updateGlobalSettings(req.body);
+        res.status(200).json({ success: true });
+    } catch (error) {
+        next(error);
+    }
+};

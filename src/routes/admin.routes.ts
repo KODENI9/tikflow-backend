@@ -1,6 +1,6 @@
 // src/routes/admin.routes.ts
 import { Router } from 'express';
-import { adjustUserBalance, createPackage, getAdminStats, getAllTransactions, getAllUsers, getPendingTransactions, getReceivedPayments, getTransactionById, updateTransactionStatus, verifyAndCredit, getPackages, getPackageById, requestCode, updatePackage, getAllPackagesAdmin, createRecipient, deleteRecipient, getRecipients, updateRecipient } from '../controllers/admin.controller';
+import { adjustUserBalance, createPackage, getAdminStats, getAllTransactions, getAllUsers, getPendingTransactions, getReceivedPayments, getTransactionById, updateTransactionStatus, verifyAndCredit, getPackages, getPackageById, requestCode, updatePackage, getAllPackagesAdmin, createRecipient, deleteRecipient, getRecipients, updateRecipient, getGlobalSettings, updateGlobalSettings } from '../controllers/admin.controller';
 import { isAdmin, requireAuth } from '../middlewares/auth';
 import { handleSMSWebhook } from '../controllers/sms.controller';
 import { verifyWebhookKey } from '../middlewares/webhookGuard';
@@ -51,5 +51,9 @@ router.post('/recipients', requireAuth, isAdmin, createRecipient);
 router.get('/recipients', requireAuth, isAdmin, getRecipients);
 router.patch('/recipients/:id', requireAuth, isAdmin, updateRecipient);
 router.delete('/recipients/:id', requireAuth, isAdmin, deleteRecipient);
+
+// Global App Settings
+router.get('/settings', requireAuth, isAdmin, getGlobalSettings);
+router.patch('/settings', requireAuth, isAdmin, updateGlobalSettings);
 
 export default router;

@@ -11,6 +11,7 @@ export class AdminService {
     private static paymentsCollection = db.collection('received_payments');
     private static packagesCollection = db.collection('packages');
     private static recipientsCollection = db.collection('recipients');
+    private static settingsCollection = db.collection('settings');
     private static walletsCollection = db.collection('wallets');
     private static usersCollection = db.collection('users');
     private static notificationsCollection = db.collection('notifications');
@@ -430,5 +431,27 @@ export class AdminService {
     static async deleteRecipient(id: string) {
         const docRef = this.recipientsCollection.doc(id);
         await docRef.delete();
+    }
+
+    // --- GLOBAL SETTINGS (App Config) ---
+    static async getGlobalSettings() {
+        const doc = await this.settingsCollection.doc('app_config').get();
+        if (!doc.exists) {
+            // Default settings if none exist
+            return {
+                support_phone: "+228 90 51 32 79",
+                updated_at: new Date()
+            };
+        }
+        return doc.data();
+    }
+
+    static async updateGlobalSettings(updates: any) {
+        const docRef = this.settingsCollection.doc('app_config');
+        await docRef.set({
+            ...updates,
+            updated_at: new Date()
+        }, { merge: true });
+        return { success: true };
     }
 }

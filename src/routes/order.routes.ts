@@ -2,7 +2,7 @@
 import { Router } from 'express';
 import { requireAuth } from '../middlewares/auth';
 import { buyWithWallet} from '../controllers/order.controller';
-import { getPackages, getPackageById, getRecipients } from '../controllers/admin.controller';
+import { getPackages, getPackageById, getRecipients, getGlobalSettings } from '../controllers/admin.controller';
 import { chargeWallet } from '../controllers/wallet.controller';
 
 import { validate } from '../middlewares/validation.middleware';
@@ -21,6 +21,7 @@ router.post('/ch_wallet', requireAuth, validate(chargeWalletSchema), chargeWalle
 router.get('/packages', getPackages);
 router.get('/packages/:id', getPackageById);
 router.get('/recipients', getRecipients);
+router.get('/app-settings', getGlobalSettings);
 
 export default router;
 

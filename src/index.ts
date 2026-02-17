@@ -9,6 +9,7 @@ import adminRoutes from './routes/admin.routes';
 import orderRoutes from './routes/order.routes';
 import userRoutes from './routes/user.routes';
 import notificationRoutes from './routes/notification.routes';
+import feedbackRoutes from './routes/feedback.routes';
 import { globalErrorHandler } from './middlewares/error.middleware';
 
 
@@ -54,6 +55,7 @@ app.use('/api/users', userRoutes);    // Profil, Wallet
 app.use('/api/orders', orderRoutes);    // Achat côté client
 app.use('/api/admin', adminRoutes);     // Gestion côté admin
 app.use('/api/notifications', notificationRoutes); // Notifications
+app.use('/api/feedback', feedbackRoutes); // Feedback
 
 // --- Route de santé ---
 app.get('/health', (req, res) => {

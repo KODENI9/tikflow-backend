@@ -26,7 +26,10 @@ export class FeedbackService {
         }
 
         const userData = userDoc.data();
-        const lastFeedbackAt = userData?.last_feedback_at?.toDate();
+        const last_feedback_at_raw = userData?.last_feedback_at;
+        const lastFeedbackAt = last_feedback_at_raw && typeof last_feedback_at_raw.toDate === 'function' 
+            ? last_feedback_at_raw.toDate() 
+            : null;
 
         if (lastFeedbackAt) {
             const thirtyDaysInMs = 30 * 24 * 60 * 60 * 1000;

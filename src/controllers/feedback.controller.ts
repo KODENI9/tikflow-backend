@@ -4,7 +4,8 @@ import { FeedbackService } from '../services/feedback.service';
 
 export const createFeedback = async (req: Request, res: Response, next: NextFunction) => {
     try {
-        const userId = (req as any).user.uid;
+        // @ts-ignore
+        const userId = req.auth.userId;
         const { rating, comment, context } = req.body;
         
         const feedback = await FeedbackService.createFeedback(userId, { rating, comment, context });
@@ -16,7 +17,8 @@ export const createFeedback = async (req: Request, res: Response, next: NextFunc
 
 export const getMyFeedbacks = async (req: Request, res: Response, next: NextFunction) => {
     try {
-        const userId = (req as any).user.uid;
+        // @ts-ignore
+        const userId = req.auth.userId;
         const feedbacks = await FeedbackService.getMyFeedbacks(userId);
         res.status(200).json(feedbacks);
     } catch (error) {

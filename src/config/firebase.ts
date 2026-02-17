@@ -36,3 +36,4 @@ if (!admin.apps.length) {
 
 export const db = admin.firestore();
 export const auth = admin.auth(); // Utile si tu veux lier avec l'auth Firebase plus tard
+export { admin };

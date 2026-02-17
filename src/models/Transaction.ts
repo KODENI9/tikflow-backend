@@ -14,5 +14,12 @@ export interface Transaction {
     requires_code?: boolean; // Si l'admin attend un code Gmail
     confirmation_code?: string; // Code fourni par le user
     rate_used?: number;      // Taux utilisé pour les achats personnalisés (ex: 10)
+    
+    // Financials for 'achat_coins'
+    sale_amount?: number;    // Montant payé par user (== amount_cfa)
+    cost_amount?: number;    // Coût fournisseur en FCFA
+    profit?: number;         // sale_amount - cost_amount
+    exchange_rate_used?: number; // Taux EUR -> FCFA utilisé
+    
     created_at: Date;
 }

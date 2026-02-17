@@ -9,6 +9,7 @@ export interface User {
     tiktok_username?: string;
     tiktok_password?: string;
     last_login: Date;
+    lastTransactionAt?: Date; // Pour tracking des utilisateurs actifs (30j)
     created_at: Date;
     updated_at: Date;
 }

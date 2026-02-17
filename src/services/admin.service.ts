@@ -5,6 +5,7 @@ import { ReceivedPayment } from '../models/ReceivedPayment';
 import { Recipient } from '../models/Recipient';
 import { AppError } from '../utils/AppError';
 import { notificationService } from './notification.service';
+import { AnalyticsService } from './analytics.service';
 
 export class AdminService {
     private static transactionsCollection = db.collection('transactions');
@@ -288,57 +289,61 @@ export class AdminService {
         const now = new Date();
         const todayStart = new Date(now.setHours(0, 0, 0, 0));
 
-        const salesSnapshot = await this.transactionsCollection
-            .where('status', '==', 'completed')
-            .get();
+        // 1. Get Aggregated Global & Monthly Stats
+        const analyticsStats = await AnalyticsService.getStats();
 
-        let totalRevenue = 0;
+        // 2. Get Today's specific 'visual' stats
+        // We calculate "Today" manually to ensure real-time accuracy for the dashboard "Today" cards
         let todayVolume = 0;
         let todayCount = 0;
 
-        salesSnapshot.forEach((doc) => {
+        const todaySalesSnapshot = await this.transactionsCollection
+            .where('status', '==', 'completed')
+            .where('created_at', '>=', todayStart)
+            .get();
+
+        todaySalesSnapshot.forEach(doc => {
             const data = doc.data();
-            
-            // Gestion robuste de la date (Timestamp vs Date)
-            let createdAt: Date | null = null;
-            if (data.created_at) {
-                if (typeof data.created_at.toDate === 'function') {
-                    createdAt = data.created_at.toDate();
-                } else {
-                    createdAt = new Date(data.created_at);
-                }
-            }
-
-            const amountCfa = Number(data.amount_cfa || 0);
-
-            // On compte tout ce qui est complété (recharge et achat_coins)
-            // Note: achat_coins utilise le solde du wallet, donc c'est du volume de vente interne
-            totalRevenue += amountCfa;
-
-            if (createdAt && createdAt >= todayStart) {
-                todayVolume += amountCfa;
-                todayCount++;
-            }
+            // Use amount_cfa for volume (consistent with how we track revenue)
+            todayVolume += Number(data.amount_cfa || 0);
+            todayCount++;
         });
-
+        
         const pendingSnapshot = await this.transactionsCollection.where('status', '==', 'pending').count().get();
+        // Users count can also come from Analytics, but live count is cheap enough
         const usersSnapshot = await this.usersCollection.count().get();
 
         return {
             // Dashboard / Stats globales
             todayCount: todayCount,
             todayVolume: todayVolume,
-            totalRevenue: totalRevenue,
-            creditedCount: salesSnapshot.size, // Nombre total de transactions complétées
+            totalRevenue: analyticsStats.totalSalesVolume, // From Aggregated
+            creditedCount: analyticsStats.totalTransactions, // From Aggregated
             pendingCount: pendingSnapshot.data().count,
             totalUsers: usersSnapshot.data().count,
-            successRate: salesSnapshot.size > 0 ? Math.round((salesSnapshot.size / (salesSnapshot.size + pendingSnapshot.data().count)) * 100) : 0,
-            trendCount: 10,
-            trendSuccess: 5,
+            
+            // Calculate success rate broadly (Completed / (Completed + Pending))
+            successRate: analyticsStats.totalTransactions > 0 
+                ? Math.round((analyticsStats.totalTransactions / (analyticsStats.totalTransactions + pendingSnapshot.data().count)) * 100) 
+                : 0,
+            
+            trendCount: 0, // Not calculated yet
+            trendSuccess: 0, // Not calculated yet
 
-            // Pour la page "Transactions" (Unification des clés)
-            totalVolume: totalRevenue,
-            totalTransactions: salesSnapshot.size + pendingSnapshot.data().count,
+            // New Data for Analytics Page
+            financials: {
+                totalDeposits: analyticsStats.totalDeposits,
+                totalSalesVolume: analyticsStats.totalSalesVolume,
+                totalCost: analyticsStats.totalCost,
+                totalProfit: analyticsStats.totalProfit,
+                totalUsersBalance: analyticsStats.totalUsersBalance,
+                totalCoinsSold: analyticsStats.totalCoinsSold
+            },
+            monthlyStats: analyticsStats.monthlyStats,
+
+            // Legacy keys compatibility for existing frontend
+            totalVolume: analyticsStats.totalSalesVolume,
+            totalTransactions: analyticsStats.totalTransactions,
             pendingTransactions: pendingSnapshot.data().count
         };
     }

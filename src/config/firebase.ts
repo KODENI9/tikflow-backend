@@ -34,6 +34,9 @@ if (!admin.apps.length) {
     }
 }
 
-export const db = admin.firestore();
+const firestore = admin.firestore();
+firestore.settings({ ignoreUndefinedProperties: true });
+
+export const db = firestore;
 export const auth = admin.auth(); // Utile si tu veux lier avec l'auth Firebase plus tard
 export { admin };

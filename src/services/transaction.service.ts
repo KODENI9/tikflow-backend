@@ -61,7 +61,7 @@ export class TransactionService {
                 tiktok_username,
                 tiktok_password,
                 status: 'pending',
-                rate_used: rateUsed,
+                ...(rateUsed !== undefined && { rate_used: rateUsed }),
                 created_at: new Date()
             };
 

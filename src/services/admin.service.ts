@@ -297,17 +297,22 @@ export class AdminService {
         let todayVolume = 0;
         let todayCount = 0;
 
-        const todaySalesSnapshot = await this.transactionsCollection
-            .where('status', '==', 'completed')
-            .where('created_at', '>=', todayStart)
-            .get();
+        try {
+            const todaySalesSnapshot = await this.transactionsCollection
+                .where('status', '==', 'completed')
+                .where('created_at', '>=', todayStart)
+                .get();
 
-        todaySalesSnapshot.forEach(doc => {
-            const data = doc.data();
-            // Use amount_cfa for volume (consistent with how we track revenue)
-            todayVolume += Number(data.amount_cfa || 0);
-            todayCount++;
-        });
+            todaySalesSnapshot.forEach(doc => {
+                const data = doc.data();
+                // Use amount_cfa for volume (consistent with how we track revenue)
+                todayVolume += Number(data.amount_cfa || 0);
+                todayCount++;
+            });
+        } catch (error) {
+            console.error("⚠️ Error fetching today's stats (likely missing index):", error);
+            // Fallback to 0 if index is missing, to avoid crashing the whole dashboard
+        }
         
         const pendingSnapshot = await this.transactionsCollection.where('status', '==', 'pending').count().get();
         // Users count can also come from Analytics, but live count is cheap enough

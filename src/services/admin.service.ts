@@ -298,20 +298,24 @@ export class AdminService {
         let todayCount = 0;
 
         try {
+            // OPTIMIZATION: To avoid complex composite index requirements (status + created_at),
+            // we fetch ALL transactions from today and filter in memory.
+            // This is efficient because "today's transactions" is a small dataset.
             const todaySalesSnapshot = await this.transactionsCollection
-                .where('status', '==', 'completed')
                 .where('created_at', '>=', todayStart)
                 .get();
 
             todaySalesSnapshot.forEach(doc => {
-                const data = doc.data();
-                // Use amount_cfa for volume (consistent with how we track revenue)
-                todayVolume += Number(data.amount_cfa || 0);
-                todayCount++;
+                const data = doc.data() as Transaction;
+                if (data.status === 'completed') {
+                    // Use amount_cfa for volume (consistent with how we track revenue)
+                    todayVolume += Number(data.amount_cfa || 0);
+                    todayCount++;
+                }
             });
         } catch (error) {
-            console.error("⚠️ Error fetching today's stats (likely missing index):", error);
-            // Fallback to 0 if index is missing, to avoid crashing the whole dashboard
+            console.error("⚠️ Error fetching today's stats:", error);
+            // Fallback to 0 handled by initialization
         }
         
         const pendingSnapshot = await this.transactionsCollection.where('status', '==', 'pending').count().get();

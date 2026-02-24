@@ -10,9 +10,9 @@ export class TransactionService {
     private static packagesCollection = db.collection('packages');
     private static COIN_RATE = 12.5;
 
-    static async  buyWithWallet(userId: string, packageId: string | undefined, tiktok_username: string, tiktok_password?: string, amount_cfa?: number) {
-        if ((!packageId && !amount_cfa) || !tiktok_username) { 
-             throw new AppError("Package ID ou montant CFA, et compte TikTok requis", 400); 
+    static async  buyWithWallet(userId: string, packageId: string | undefined, tiktok_username: string, tiktok_password?: string, amount_coins?: number) {
+        if ((!packageId && !amount_coins) || !tiktok_username) { 
+             throw new AppError("Package ID ou montant de coins, et compte TikTok requis", 400); 
         }
 
         const result = await db.runTransaction(async (t) => {
@@ -30,18 +30,12 @@ export class TransactionService {
                 coins = pkgData?.coins;
             } else {
                 // Achat personnalisé
-                if (!amount_cfa || amount_cfa < 2000) {
-                    throw new AppError("Le montant minimum est de 2000 CFA.", 400);
+                if (!amount_coins || amount_coins < 160) {
+                    throw new AppError("Le montant minimum est de 160 coins.", 400);
                 }
 
-                // Vérifier si le montant correspond à un nombre entier de coins
-                const calculatedCoins = amount_cfa / this.COIN_RATE;
-                if (!Number.isInteger(calculatedCoins)) {
-                    throw new AppError(`Le montant de ${amount_cfa} CFA ne permet pas d'obtenir un nombre entier de coins (Taux: ${this.COIN_RATE} CFA/coin).`, 400);
-                }
-
-                price = Number(amount_cfa);
-                coins = calculatedCoins;
+                coins = Math.floor(amount_coins);
+                price = coins * this.COIN_RATE;
                 rateUsed = this.COIN_RATE;
             }
 

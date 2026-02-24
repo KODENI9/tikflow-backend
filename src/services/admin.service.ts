@@ -341,19 +341,19 @@ export class AdminService {
 
             // New Data for Analytics Page
             financials: {
-                totalDeposits: analyticsStats.totalDeposits,
-                totalSalesVolume: analyticsStats.totalSalesVolume,
-                totalCost: analyticsStats.totalCost,
-                totalProfit: analyticsStats.totalProfit,
-                totalUsersBalance: analyticsStats.totalUsersBalance,
-                totalCoinsSold: analyticsStats.totalCoinsSold
+                totalDeposits: Number(analyticsStats.totalDeposits || 0),
+                totalSalesVolume: Number(analyticsStats.totalSalesVolume || 0),
+                totalCost: Number(analyticsStats.totalCost || 0),
+                totalProfit: Number(analyticsStats.totalProfit || 0),
+                totalUsersBalance: Number(analyticsStats.totalUsersBalance || 0),
+                totalCoinsSold: Number(analyticsStats.totalCoinsSold || 0)
             },
-            monthlyStats: analyticsStats.monthlyStats,
+            monthlyStats: analyticsStats.monthlyStats || {},
 
             // Legacy keys compatibility for existing frontend
-            totalVolume: analyticsStats.totalSalesVolume,
-            totalTransactions: analyticsStats.totalTransactions,
-            pendingTransactions: pendingSnapshot.data().count
+            totalVolume: Number(analyticsStats.totalSalesVolume || 0),
+            totalTransactions: Number(analyticsStats.totalTransactions || 0),
+            pendingTransactions: Number(pendingSnapshot.data().count || 0)
         };
     }
 

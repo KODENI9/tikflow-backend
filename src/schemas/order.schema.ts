@@ -24,7 +24,7 @@ export const buyCoinsSchema = z.object({
     }),
 });
 
-export const chargeWalletSchema = z.object({
+export const chargeWalletSchema   = z.object({
     body: z.object({
         payment_method: z.string().min(1, "Méthode de paiement requise"),
         ref_id: z.string().min(1, "ID de référence requis"),

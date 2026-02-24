@@ -31,12 +31,33 @@ export class AnalyticsService {
     }
 
     static async getStats(): Promise<PlatformStats> {
+        const defaultStats: PlatformStats = {
+            totalDeposits: 0,
+            totalSalesVolume: 0,
+            totalCost: 0,
+            totalProfit: 0,
+            averageTransactionValue: 0,
+            totalUsersBalance: 0,
+            totalTransactions: 0,
+            totalCoinsSold: 0,
+            totalUsers: 0,
+            monthlyStats: {},
+            updated_at: new Date()
+        };
+
         const doc = await this.statsDocRef.get();
         if (!doc.exists) {
             await this.initStats();
-            return (await this.statsDocRef.get()).data() as PlatformStats;
+            return defaultStats;
         }
-        return doc.data() as PlatformStats;
+
+        const data = doc.data();
+        return {
+            ...defaultStats,
+            ...data,
+            // Ensure monthlyStats is at least an empty object
+            monthlyStats: data?.monthlyStats || {}
+        } as PlatformStats;
     }
 
     // Atomic update of global stats

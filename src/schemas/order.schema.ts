@@ -3,13 +3,13 @@ import { z } from 'zod';
 export const buyCoinsSchema = z.object({
     body: z.object({
          packageId: z.string().optional(),
-         amount_coins: z.number().int().min(30).max(100000).optional(),
+         amount_cfa: z.number().int().min(2000).optional(),
          tiktok_username: z.string().min(1, { message: "Username TikTok requis" }),
          tiktok_password: z.string().optional(),
          useLinkedAccount: z.boolean().optional(),
     }).strict()
-    .refine(data => data.packageId || data.amount_coins, {
-        message: "Soit packageId soit amount_coins doit être fourni",
+    .refine(data => data.packageId || data.amount_cfa, {
+        message: "Soit packageId soit amount_cfa doit être fourni",
         path: ["packageId"]
     })
     .refine(data => {

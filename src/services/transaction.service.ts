@@ -3,6 +3,7 @@ import { db } from '../config/firebase';
 import { Transaction } from '../models/Transaction';
 import { AppError } from '../utils/AppError';
 import { notificationService } from './notification.service';
+import { SmsService } from './sms.service';
 
 export class TransactionService {
     private static transactionsCollection = db.collection('transactions');

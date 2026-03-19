@@ -75,12 +75,13 @@ export class SmsService {
         let amount: number = 0;
 
         // Regex plus flexible pour le montant
-        // Supporte "Montant: 5000", "5000 FCFA", "recu 5000", "de 5000"
-        const amountRegex = /(?:montant|reçu|recu|de|paiement)\s*[:]?\s*([\d\s.,]+)\s*(?:f|fcfa)/i;
+        // Supporte "Montant: 5000", "5000 FCFA", "recu 5000", "de 5000", "transfert de 5.000 F"
+        const amountRegex = /(?:montant|reçu|recu|de|paiement|transfert de)\s*[:]?\s*([\d\s,.]+)\s*(?:f|fcfa|cfa)/i;
         const amountMatch = contentNormalized.match(amountRegex);
 
         if (amountMatch && amountMatch[1]) {
-            const rawAmount = amountMatch[1].replace(/,/g, '.').replace(/[^\d.]/g, '');
+            // Nettoyage : enlever les espaces et les virgules (séparateurs de milliers) pour parseFloat
+            const rawAmount = amountMatch[1].replace(/[\s,]/g, '');
             amount = parseFloat(rawAmount);
         }
 

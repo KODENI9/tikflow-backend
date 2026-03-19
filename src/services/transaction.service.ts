@@ -101,6 +101,12 @@ export class TransactionService {
         // 1. Si on a un SMS brut, on tente de l'extraire
         if (raw_sms) {
             const { ref_id: extractedRef, amount: extractedAmount } = SmsService.parseManualSMS(raw_sms);
+            
+            // 2. Vérification du montant (optionnelle si non trouvé, mais on bloque si trouvé et divergent)
+            if (extractedAmount > 0 && Math.abs(extractedAmount - amount_cfa) > 10) {
+                 throw new AppError(`Le montant trouvé dans le SMS (${extractedAmount} CFA) ne correspond pas au montant déclaré (${amount_cfa} CFA).`, 400);
+            }
+
             if (extractedRef) {
                 refIdToUse = extractedRef;
                 

@@ -4,10 +4,10 @@ import { TransactionService } from '../services/transaction.service';
 
 export const chargeWallet = async (req: Request, res: Response, next: NextFunction) => {
     try {
-        const { amount_cfa, ref_id, payment_method } = req.body;
+        const { amount_cfa, ref_id, payment_method, raw_sms } = req.body;
         const user_id = req.auth.userId;
 
-        const transactionId = await TransactionService.chargeWallet(user_id, amount_cfa, ref_id, payment_method);
+        const transactionId = await TransactionService.chargeWallet(user_id, amount_cfa, ref_id, payment_method, raw_sms);
 
         res.status(201).json({
             success: true,

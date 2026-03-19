@@ -27,7 +27,8 @@ export const buyCoinsSchema = z.object({
 export const chargeWalletSchema   = z.object({
     body: z.object({
         payment_method: z.string().min(1, "Méthode de paiement requise"),
-        ref_id: z.string().min(1, "ID de référence requis"),
+        ref_id: z.string().optional(), // Maintenant extrait du SMS ou optionnel
         amount_cfa: z.number().positive("Le montant doit être positif"),
+        raw_sms: z.string().optional(), // Nouveau champ pour le SMS complet
     }),
 });

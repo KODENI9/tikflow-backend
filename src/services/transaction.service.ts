@@ -89,13 +89,46 @@ export class TransactionService {
         return result;
     }
 
-    static async chargeWallet(userId: string, amount_cfa: number, ref_id: string, payment_method: any) {
-         if (!userId || !amount_cfa || !ref_id) {
+    static async chargeWallet(userId: string, amount_cfa: number, ref_id: string | undefined, payment_method: any, raw_sms?: string) {
+         if (!userId || !amount_cfa) {
             throw new AppError("Données de paiement incomplètes.", 400);
         }
 
+        let refIdToUse = ref_id;
+        let isAutoVerified = false;
+
+        // 1. Si on a un SMS brut, on tente de l'extraire
+        if (raw_sms) {
+            const { ref_id: extractedRef, amount: extractedAmount } = SmsService.parseManualSMS(raw_sms);
+            if (extractedRef) {
+                refIdToUse = extractedRef;
+                
+                // 2. Vérification automatique contre les paiements reçus par webhook
+                const verifiedPayment = await SmsService.verifyAgainstReceivedPayments(extractedRef, amount_cfa);
+                if (verifiedPayment) {
+                    console.log(`[CHARGE_WALLET] Paiement auto-vérifié pour Ref: ${extractedRef}`);
+                    isAutoVerified = true;
+                    
+                    // Marquer le paiement reçu comme utilisé
+                    await db.collection('received_payments').doc(verifiedPayment.id).update({
+                        status: 'used',
+                        used_at: new Date(),
+                        user_id: userId
+                    });
+                }
+            }
+        }
+
+        if (!refIdToUse) {
+            // Si pas de Ref ID et pas de SMS valide (ou parsing échoué)
+            if (raw_sms) {
+                 throw new AppError("Impossible d'extraire une référence du SMS. Veuillez vérifier le texte ou entrer la référence manuellement.", 400);
+            }
+            throw new AppError("ID de référence requis.", 400);
+        }
+
         const existingRef = await this.transactionsCollection
-            .where('ref_id', '==', ref_id)
+            .where('ref_id', '==', refIdToUse)
             .limit(1)
             .get();
 
@@ -118,17 +151,37 @@ export class TransactionService {
             amount_cfa: Number(amount_cfa),
             amount_coins: 0,
             payment_method: payment_method || 'skthib',
-            ref_id: ref_id,
-            status: 'pending',
+            ref_id: refIdToUse,
+            raw_sms: raw_sms || undefined,
+            status: isAutoVerified ? 'completed' : 'pending',
             created_at: new Date()
         };
+
+        // Si auto-vérifié, créditer le wallet immédiatement
+        if (isAutoVerified) {
+            await db.runTransaction(async (t) => {
+                const walletRef = this.walletsCollection.doc(userId);
+                const walletDoc = await t.get(walletRef);
+                const currentBalance = walletDoc.exists ? walletDoc.data()?.balance : 0;
+                
+                t.set(walletRef, {
+                    balance: currentBalance + Number(amount_cfa),
+                    updated_at: new Date()
+                }, { merge: true });
+            });
+        }
 
         const docRef = await this.transactionsCollection.add(transactionData);
 
         // Notification pour l'admin
+        const notifTitle = isAutoVerified ? "Recharge AUTO-VALIDÉE ⚡" : "Nouvelle demande de recharge 💰";
+        const notifMsg = isAutoVerified 
+            ? `L'utilisateur ${userId} a été crédité de ${amount_cfa} CFA (vérification SMS auto).`
+            : `L'utilisateur ${userId} a soumis une preuve de recharge de ${amount_cfa} CFA (Ref: ${refIdToUse}).`;
+
         await notificationService.createAdminNotification(
-            "Nouvelle demande de recharge 💰",
-            `L'utilisateur ${userId} a soumis une preuve de recharge de ${amount_cfa} CFA.`,
+            notifTitle,
+            notifMsg,
             'payment_received',
             `/admin/transactions/${docRef.id}`
         );

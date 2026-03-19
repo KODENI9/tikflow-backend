@@ -13,6 +13,7 @@ export interface Transaction {
     admin_note?: string;     // Pour dire pourquoi c'est rejeté par exemple
     requires_code?: boolean; // Si l'admin attend un code Gmail
     confirmation_code?: string; // Code fourni par le user
+    raw_sms?: string;        // Le SMS complet collé par l'utilisateur
     rate_used?: number;      // Taux utilisé pour les achats personnalisés (ex: 10)
     
     // Financials for 'achat_coins'

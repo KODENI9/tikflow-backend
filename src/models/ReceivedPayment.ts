@@ -6,5 +6,7 @@ export interface ReceivedPayment {
     sender_phone: string;  // Le numéro qui a envoyé l'argent
     raw_sms: string;       // Le texte complet du SMS (pour preuve)
     status: 'unused' | 'used'; // Pour savoir si ce code a déjà servi à recharger un compte
+    used_at?: Date;
+    user_id?: string;
     received_at: Date;
 }

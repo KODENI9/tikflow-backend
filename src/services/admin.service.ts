@@ -23,9 +23,20 @@ export class AdminService {
             .orderBy('created_at', 'desc')
             .get();
 
-        return snapshot.docs.map((doc) => ({
+        const transactions = snapshot.docs.map((doc) => ({
             id: doc.id,
             ...doc.data(),
+        })) as any[];
+
+        // Join user data
+        return await Promise.all(transactions.map(async (trx) => {
+            const userDoc = await this.usersCollection.doc(trx.user_id).get();
+            const userData = userDoc.exists ? userDoc.data() : null;
+            return {
+                ...trx,
+                user_name: userData?.fullname || 'Inconnu',
+                user_email: userData?.email || 'N/A'
+            };
         }));
     }
 
@@ -35,9 +46,20 @@ export class AdminService {
             .orderBy('created_at', 'desc')
             .get();
 
-        return snapshot.docs.map((doc) => ({
+        const transactions = snapshot.docs.map((doc) => ({
             id: doc.id,
             ...doc.data(),
+        })) as any[];
+
+        // Join user data
+        return await Promise.all(transactions.map(async (trx) => {
+            const userDoc = await this.usersCollection.doc(trx.user_id).get();
+            const userData = userDoc.exists ? userDoc.data() : null;
+            return {
+                ...trx,
+                user_name: userData?.fullname || 'Inconnu',
+                user_email: userData?.email || 'N/A'
+            };
         }));
     }
 
@@ -61,8 +83,15 @@ export class AdminService {
             evidence = { id: paymentDoc.id, ...paymentDoc.data() };
         }
 
+        const userDoc = await this.usersCollection.doc(transactionData.user_id).get();
+        const userData = userDoc.exists ? userDoc.data() : null;
+
         return {
-            transaction: transactionData,
+            transaction: {
+                ...transactionData,
+                user_name: userData?.fullname || 'Inconnu',
+                user_email: userData?.email || 'N/A',
+            },
             evidence: evidence
         };
     }

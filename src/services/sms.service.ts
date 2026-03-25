@@ -25,8 +25,7 @@ export class SmsService {
         const amountMatch = contentNormalized.match(amountRegex);
 
         if (amountMatch && amountMatch[1]) {
-            const rawAmount = amountMatch[1].replace(/,/g, '.').replace(/[^\d.]/g, '');
-            amount = parseFloat(rawAmount);
+            amount = SmsService.robustParseAmount(amountMatch[1]);
         }
 
         const refRegex = /(?:ref|txn\s*id|transaction\s*id|id)\s*[:\s.]*([a-z0-9]+)/i;
@@ -80,9 +79,7 @@ export class SmsService {
         const amountMatch = contentNormalized.match(amountRegex);
 
         if (amountMatch && amountMatch[1]) {
-            // Nettoyage : enlever les espaces et les virgules (séparateurs de milliers) pour parseFloat
-            const rawAmount = amountMatch[1].replace(/[\s,]/g, '');
-            amount = parseFloat(rawAmount);
+            amount = SmsService.robustParseAmount(amountMatch[1]);
         }
 
         // Regex pour le Ref ID
@@ -95,6 +92,43 @@ export class SmsService {
         }
 
         return { ref_id, amount };
+    }
+
+    /**
+     * Parse un montant de manière robuste en gérant les espaces, les virgules (décimales) 
+     * et les points (milliers/décimales).
+     */
+    private static robustParseAmount(rawAmount: string): number {
+        // 1. Nettoyage des espaces (y compris espaces insécables)
+        let s = rawAmount.trim().replace(/[\s\u00A0]/g, '');
+        
+        // 2. S'il n'y a aucun séparateur, on retourne directement
+        if (!(/[.,]/.test(s))) {
+            return parseFloat(s) || 0;
+        }
+
+        // 3. On regarde le DERNIER séparateur
+        const lastDot = s.lastIndexOf('.');
+        const lastComma = s.lastIndexOf(',');
+        const lastSepIndex = Math.max(lastDot, lastComma);
+        
+        if (lastSepIndex === -1) return parseFloat(s) || 0;
+
+        const afterSep = s.substring(lastSepIndex + 1);
+        
+        // Si le séparateur est suivi par exactement 3 chiffres, c'est probablement un séparateur de milliers (ex: 1.250 ou 1,250)
+        // SAUF si c'est le seul séparateur et que le nombre commence par 0 (ex: 0.123)
+        if (afterSep.length === 3 && !s.startsWith('0')) {
+            // On enlève TOUS les séparateurs
+            return parseFloat(s.replace(/[.,]/g, '')) || 0;
+        }
+
+        // Si le séparateur est suivi par 1 ou 2 chiffres (ou plus de 3), on considère que c'est une décimale
+        // On enlève tous les autres séparateurs avant, et on s'assure que celui-ci est un point
+        const before = s.substring(0, lastSepIndex).replace(/[.,]/g, '');
+        const currentSep = s[lastSepIndex];
+        
+        return parseFloat(before + '.' + afterSep) || 0;
     }
 
     /**

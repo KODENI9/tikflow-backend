@@ -79,10 +79,24 @@ export class TransactionService {
             };
         });
 
+        // Récupérer les infos de l'utilisateur pour une notification plus claire
+        const userDoc = await db.collection('users').doc(userId).get();
+        const userData = userDoc.data();
+        let userIdentifier = userId;
+
+        if (userData) {
+            const { fullname, email } = userData;
+            if (fullname && email) {
+                userIdentifier = `${fullname} (${email})`;
+            } else {
+                userIdentifier = fullname || email || userId;
+            }
+        }
+
         // Notification pour l'admin
         await notificationService.createAdminNotification(
             "Nouvelle commande TikTok 🚀",
-            `L'utilisateur ${userId} a commandé ${result.coins} coins (${result.amount_cfa} CFA) pour le compte ${result.tiktok_username}.`,
+            `L'utilisateur ${userIdentifier} a commandé ${result.coins} coins (${result.amount_cfa} CFA) pour le compte ${result.tiktok_username}.`,
             'order_delivered',
             `/admin/orders/${result.transactionId}`
         );
@@ -179,12 +193,26 @@ export class TransactionService {
         }
 
         const docRef = await this.transactionsCollection.add(transactionData);
+        
+        // Récupérer les infos de l'utilisateur pour une notification plus claire
+        const userDoc = await db.collection('users').doc(userId).get();
+        const userData = userDoc.data();
+        let userIdentifier = userId;
+
+        if (userData) {
+            const { fullname, email } = userData;
+            if (fullname && email) {
+                userIdentifier = `${fullname} (${email})`;
+            } else {
+                userIdentifier = fullname || email || userId;
+            }
+        }
 
         // Notification pour l'admin
         const notifTitle = isAutoVerified ? "Recharge AUTO-VALIDÉE ⚡" : "Nouvelle demande de recharge 💰";
         const notifMsg = isAutoVerified 
-            ? `L'utilisateur ${userId} a été crédité de ${amount_cfa} CFA (vérification SMS auto).`
-            : `L'utilisateur ${userId} a soumis une preuve de recharge de ${amount_cfa} CFA (Ref: ${refIdToUse}).`;
+            ? `L'utilisateur ${userIdentifier} a été crédité de ${amount_cfa} CFA (vérification SMS auto).`
+            : `L'utilisateur ${userIdentifier} a soumis une preuve de recharge de ${amount_cfa} CFA (Ref: ${refIdToUse}).`;
 
         await notificationService.createAdminNotification(
             notifTitle,

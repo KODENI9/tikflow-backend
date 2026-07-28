@@ -21,6 +21,10 @@ const app: Application = express();
 // --- Middlewares de base ---
 app.use(helmet()); // Sécurité des headers HTTP
 
+// Indispensable sur Render / tout reverse proxy :
+// permet à Express de lire correctement X-Forwarded-For
+app.set('trust proxy', 1);
+
 // Limitation du taux de requêtes (Rate Limiting)
 const limiter = rateLimit({
     windowMs: 15 * 60 * 1000, // 15 minutes

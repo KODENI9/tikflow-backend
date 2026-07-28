@@ -168,7 +168,7 @@ export class PaymentService {
             userId,
             orderId: paymentId,
             coins: resolvedCoins,
-            returnUrl: `${frontendUrl}/dashboard/orders?payment_status=return&paymentId=${paymentId}`,
+            returnUrl: `${frontendUrl}/dashboard/history?payment_status=return&paymentId=${paymentId}`,
             webhookUrl: `${backendBaseUrl}/api/payments/webhook`,
         });
 

@@ -103,7 +103,7 @@ export class MoneyFusionService {
         const payload: MoneyFusionPaymentRequest = {
             totalPrice: params.amount,
             article: [
-                { [`${params.coins} TikTok Coins`]: params.amount },
+                { 'TikTok Coins': params.amount },
             ],
             numeroSend: params.phone,
             nomclient: params.nomclient,
@@ -116,6 +116,9 @@ export class MoneyFusionService {
             ...(params.returnUrl && { return_url: params.returnUrl }),
             ...(params.webhookUrl && { webhook_url: params.webhookUrl }),
         };
+
+        console.log('[MONEYFUSION] Envoi payload à:', MONEYFUSION_API_URL);
+        console.log('[MONEYFUSION] Payload:', JSON.stringify(payload, null, 2));
 
         let response: Response;
         try {
@@ -139,6 +142,8 @@ export class MoneyFusionService {
         }
 
         if (!response.ok || !data.statut) {
+            console.error('[MONEYFUSION] Erreur réponse HTTP:', response.status, response.statusText);
+            console.error('[MONEYFUSION] Body réponse:', JSON.stringify(data));
             throw new AppError(
                 `MoneyFusion a refusé la demande: ${data.message || response.statusText}`,
                 response.status === 400 ? 400 : 502

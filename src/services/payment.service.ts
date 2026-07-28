@@ -307,7 +307,7 @@ export class PaymentService {
 
             if (paymentData.type === 'PURCHASE') {
                 if (!meta?.tiktok_username) throw new Error("Username TikTok manquant pour l'achat.");
-                
+
                 // Déclencher la livraison via TransactionService
                 await TransactionService.buyWithWallet(
                     paymentData.userId,
@@ -322,7 +322,7 @@ export class PaymentService {
                 // Notification user : achat
                 await notificationService.create({
                     user_id: paymentData.userId,
-                    title: '🎉 Paiement d\'achat confirmé !',
+                    title: '🎉 Paiement d\'achat confirmé merci pour la confiance !',
                     message: `Votre achat de ${paymentData.amount} FCFA a été validé. Votre commande de TikTok Coins est en cours de traitement.`,
                     type: 'payment_received',
                 });
@@ -332,7 +332,7 @@ export class PaymentService {
                     const walletRef = this.walletsCollection.doc(paymentData.userId);
                     const walletDoc = await t.get(walletRef);
                     const currentBalance = walletDoc.exists ? walletDoc.data()?.balance : 0;
-                    
+
                     t.set(walletRef, {
                         balance: currentBalance + paymentData.amount,
                         updated_at: new Date()

@@ -65,5 +65,21 @@ export const moneyFusionWebhookSchema = z.object({
     }).passthrough(), // MoneyFusion peut envoyer des champs supplémentaires
 });
 
+/**
+ * Schéma pour le paiement avec le solde du portefeuille.
+ */
+export const payWithWalletSchema = z.object({
+    body: z.object({
+        packageId: z.string().optional(),
+        amount_coins: z.number().int().min(160).optional(),
+        tiktok_username: z.string().min(1, { message: 'Username TikTok requis' }),
+        tiktok_password: z.string().optional(),
+    }).refine(data => data.packageId || data.amount_coins, {
+        message: 'packageId ou amount_coins requis',
+        path: ['packageId'],
+    })
+});
+
 export type CreatePaymentInput = z.infer<typeof createPaymentSchema>['body'];
 export type MoneyFusionWebhookInput = z.infer<typeof moneyFusionWebhookSchema>['body'];
+export type PayWithWalletInput = z.infer<typeof payWithWalletSchema>['body'];

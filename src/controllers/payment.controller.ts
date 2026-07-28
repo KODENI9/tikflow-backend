@@ -1,6 +1,7 @@
 // src/controllers/payment.controller.ts
 import { Request, Response, NextFunction } from 'express';
 import { PaymentService } from '../services/payment.service';
+import { TransactionService } from '../services/transaction.service';
 import { AppError } from '../utils/AppError';
 
 /**
@@ -164,6 +165,42 @@ export async function verifyPayment(req: Request, res: Response, next: NextFunct
         res.status(200).json({
             success: true,
             data: result,
+        });
+    } catch (error) {
+        next(error);
+    }
+}
+
+// ────────────────────────────────────────────────────────────────────────────
+// POST /api/payments/pay-with-wallet
+// ────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Achète des TikTok coins directement avec le solde TikFlow (Wallet).
+ */
+export async function payWithWallet(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+        // @ts-ignore
+        const userId: string = req.auth?.userId;
+        if (!userId) {
+            next(new AppError('Non authentifié', 401));
+            return;
+        }
+
+        const { packageId, amount_coins, tiktok_username, tiktok_password } = req.body;
+
+        const result = await TransactionService.buyWithWallet(
+            userId,
+            packageId,
+            tiktok_username,
+            tiktok_password,
+            amount_coins
+        );
+
+        res.status(200).json({
+            success: true,
+            data: result,
+            message: "Paiement réussi avec votre solde"
         });
     } catch (error) {
         next(error);

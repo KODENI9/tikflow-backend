@@ -2,12 +2,13 @@
 import { Router } from 'express';
 import { requireAuth } from '../middlewares/auth';
 import { validate } from '../middlewares/validation.middleware';
-import { createPaymentSchema, moneyFusionWebhookSchema } from '../schemas/payment.schema';
+import { createPaymentSchema, moneyFusionWebhookSchema, payWithWalletSchema } from '../schemas/payment.schema';
 import {
     createPayment,
     handleWebhook,
     getPaymentStatus,
     verifyPayment,
+    payWithWallet,
 } from '../controllers/payment.controller';
 
 const router = Router();
@@ -62,6 +63,19 @@ router.post(
     '/:paymentId/verify',
     requireAuth,
     verifyPayment
+);
+
+/**
+ * POST /api/payments/pay-with-wallet
+ *
+ * Payer avec le solde du portefeuille.
+ * Authentification Clerk requise.
+ */
+router.post(
+    '/pay-with-wallet',
+    requireAuth,
+    validate(payWithWalletSchema),
+    payWithWallet
 );
 
 export default router;

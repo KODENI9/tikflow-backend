@@ -315,9 +315,12 @@ export class PaymentService {
         console.log(`[VERIFY] Vérification manuelle du paiement ${paymentId} (token: ${token})`);
 
         const statusResponse = await MoneyFusionService.checkPaymentStatus(token);
-        console.log(`[VERIFY] Réponse MoneyFusion:`, JSON.stringify(statusResponse));
+        console.log(`[VERIFY] Réponse MoneyFusion brute:`, JSON.stringify(statusResponse));
+        console.log(`[VERIFY] statut champ:`, statusResponse.statut, typeof statusResponse.statut);
+        console.log(`[VERIFY] isConfirmed:`, MoneyFusionService.isPaymentConfirmed(statusResponse));
 
         if (MoneyFusionService.isPaymentConfirmed(statusResponse)) {
+            console.log(`[VERIFY] Lancement de confirmPaymentAndDeliver pour ${paymentId}`);
             await this.confirmPaymentAndDeliver(paymentId, paymentData, { source: 'manual_verify' });
             console.log(`[VERIFY] Paiement ${paymentId} confirmé et crédité manuellement.`);
             return { status: 'PAID', credited: true };
@@ -384,13 +387,17 @@ export class PaymentService {
                 });
             } else {
                 // Type DEPOSIT
+                console.log(`[DEPOSIT] Début créditation wallet pour user: ${paymentData.userId}, montant: ${paymentData.amount}`);
                 await db.runTransaction(async (t) => {
                     const walletRef = this.walletsCollection.doc(paymentData.userId);
                     const walletDoc = await t.get(walletRef);
-                    const currentBalance = walletDoc.exists ? walletDoc.data()?.balance : 0;
+                    const currentBalance = walletDoc.exists ? (walletDoc.data()?.balance ?? 0) : 0;
+                    const newBalance = currentBalance + paymentData.amount;
+
+                    console.log(`[DEPOSIT] Wallet exist: ${walletDoc.exists}, balance actuel: ${currentBalance}, nouveau: ${newBalance}`);
 
                     t.set(walletRef, {
-                        balance: currentBalance + paymentData.amount,
+                        balance: newBalance,
                         updated_at: new Date()
                     }, { merge: true });
 

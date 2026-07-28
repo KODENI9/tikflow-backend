@@ -117,7 +117,9 @@ export class PaymentService {
         }
 
         // 2. Protection anti-doublon :
-        // Vérifie qu'il n'existe pas déjà un paiement PENDING pour ce userId + montant
+        // On vérifie s'il existe un paiement PENDING récent (< 10 min) pour ce userId + montant
+        // afin d'éviter les doubles clics, mais PAS les rechargements intentionnels ultérieurs.
+        const TEN_MINUTES_AGO = new Date(Date.now() - 10 * 60 * 1000);
         const duplicateCheck = await this.paymentsCollection
             .where('userId', '==', userId)
             .where('amount', '==', resolvedAmount)
@@ -128,14 +130,19 @@ export class PaymentService {
         if (!duplicateCheck.empty) {
             const existing = duplicateCheck.docs[0];
             const existingData = existing.data() as Payment;
-            // Si l'URL est encore valide, on la retourne directement
-            if (existingData.moneyFusionUrl) {
+            const createdAt: Date = existingData.createdAt instanceof Date
+                ? existingData.createdAt
+                : (existingData.createdAt as any).toDate?.() ?? new Date(0);
+
+            // Si le paiement a moins de 10 minutes, on le réutilise (anti double-clic)
+            if (createdAt >= TEN_MINUTES_AGO && existingData.moneyFusionUrl) {
                 return {
                     paymentId: existing.id,
                     paymentUrl: existingData.moneyFusionUrl,
                     token: existingData.moneyFusionToken || '',
                 };
             }
+            // Sinon (paiement vieux ou sans URL), on continue pour en créer un nouveau
         }
 
         // 3. Création du document Firestore en PENDING
@@ -268,6 +275,55 @@ export class PaymentService {
             });
             console.log(`[PAYMENT_WEBHOOK] Paiement ${paymentDoc.id} marqué FAILED.`);
         }
+    }
+
+    // ──────────────────────────────────────────────────────────────────────
+    // VÉRIFICATION MANUELLE (fallback si webhook non reçu)
+    // ──────────────────────────────────────────────────────────────────────
+
+    /**
+     * Vérifie un paiement auprès de MoneyFusion et le crédite si confirmé.
+     * Appelé depuis le frontend quand l'utilisateur revient sur le site après paiement.
+     * Sert de fallback si le webhook MoneyFusion n'a pas été reçu.
+     *
+     * @param paymentId - ID Firestore du paiement
+     * @param userId - ID Clerk de l'utilisateur (sécurité)
+     */
+    static async verifyAndProcessPayment(
+        paymentId: string,
+        userId: string
+    ): Promise<{ status: string; credited: boolean }> {
+        const paymentDoc = await this.paymentsCollection.doc(paymentId).get();
+        if (!paymentDoc.exists) throw new AppError('Paiement introuvable', 404);
+
+        const paymentData = paymentDoc.data() as Payment;
+
+        // Sécurité : l'utilisateur doit être propriétaire du paiement
+        if (paymentData.userId !== userId) throw new AppError('Non autorisé', 403);
+
+        // Déjà traité
+        if (paymentData.status === 'PAID') {
+            return { status: 'PAID', credited: false };
+        }
+        if (paymentData.status === 'FAILED' || paymentData.status === 'CANCELLED') {
+            return { status: paymentData.status, credited: false };
+        }
+
+        const token = paymentData.moneyFusionToken;
+        if (!token) throw new AppError('Token de paiement manquant', 400);
+
+        console.log(`[VERIFY] Vérification manuelle du paiement ${paymentId} (token: ${token})`);
+
+        const statusResponse = await MoneyFusionService.checkPaymentStatus(token);
+        console.log(`[VERIFY] Réponse MoneyFusion:`, JSON.stringify(statusResponse));
+
+        if (MoneyFusionService.isPaymentConfirmed(statusResponse)) {
+            await this.confirmPaymentAndDeliver(paymentId, paymentData, { source: 'manual_verify' });
+            console.log(`[VERIFY] Paiement ${paymentId} confirmé et crédité manuellement.`);
+            return { status: 'PAID', credited: true };
+        }
+
+        return { status: 'PENDING', credited: false };
     }
 
     // ──────────────────────────────────────────────────────────────────────

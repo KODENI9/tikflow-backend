@@ -135,3 +135,37 @@ export async function getPaymentStatus(req: Request, res: Response, next: NextFu
         next(error);
     }
 }
+
+// ────────────────────────────────────────────────────────────────────────────
+// POST /api/payments/:paymentId/verify
+// ────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Vérifie manuellement un paiement auprès de MoneyFusion et le crédite si confirmé.
+ * Fallback appelé depuis le frontend quand l'utilisateur revient après paiement.
+ */
+export async function verifyPayment(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+        // @ts-ignore
+        const userId: string = req.auth?.userId;
+        if (!userId) {
+            next(new AppError('Non authentifié', 401));
+            return;
+        }
+
+        const paymentId = req.params.paymentId as string;
+        if (!paymentId) {
+            next(new AppError('paymentId requis', 400));
+            return;
+        }
+
+        const result = await PaymentService.verifyAndProcessPayment(paymentId, userId);
+
+        res.status(200).json({
+            success: true,
+            data: result,
+        });
+    } catch (error) {
+        next(error);
+    }
+}

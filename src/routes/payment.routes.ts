@@ -7,6 +7,7 @@ import {
     createPayment,
     handleWebhook,
     getPaymentStatus,
+    verifyPayment,
 } from '../controllers/payment.controller';
 
 const router = Router();
@@ -48,6 +49,19 @@ router.get(
     '/:paymentId/status',
     requireAuth,
     getPaymentStatus
+);
+
+/**
+ * POST /api/payments/:paymentId/verify
+ *
+ * Vérifie manuellement un paiement auprès de MoneyFusion et le crédite si confirmé.
+ * Fallback si le webhook MoneyFusion n'a pas été reçu.
+ * Authentification Clerk requise.
+ */
+router.post(
+    '/:paymentId/verify',
+    requireAuth,
+    verifyPayment
 );
 
 export default router;

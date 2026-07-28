@@ -5,7 +5,7 @@ import { AppError } from '../utils/AppError';
 const MONEYFUSION_API_URL = process.env.MONEYFUSION_API_URL || '';
 
 /** URL de base MoneyFusion pour la vérification de statut */
-const MONEYFUSION_CHECK_URL = 'https://www.pay.moneyfusion.net/paiementNotif';
+const MONEYFUSION_CHECK_URL = process.env.MONEYFUSION_CHECK_URL || 'https://pay.moneyfusion.net/paiementNotif';
 
 // ────────────────────────────────────────────────────────────────────────────
 // Types internes

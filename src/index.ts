@@ -14,6 +14,7 @@ import paymentRoutes from './routes/payment.routes';
 import { globalErrorHandler } from './middlewares/error.middleware';
 
 
+
 dotenv.config();
 
 const app: Application = express();
@@ -33,20 +34,28 @@ const limiter = rateLimit({
 });
 app.use(limiter);
 
-// Configuration CORS stricte
+// Configuration CORS avec support dev et réseau local
 const allowedOrigins = [
     process.env.FRONTEND_URL, 
     'http://localhost:3000', 
+    'http://127.0.0.1:3000',
     'http://10.0.10.35:3000', 
     'https://tikflow.com',
     'https://tikflowaf.vercel.app'
 ]; 
+
 app.use(cors({
     origin: (origin, callback) => {
-        if (!origin || allowedOrigins.includes(origin)) {
+        // Autoriser si pas d'origin (ex: requêtes serveur à serveur, mobile, curl)
+        if (!origin) return callback(null, true);
+
+        // En mode dev ou si l'origine est dans la liste autorisée ou provient d'un IP local (192.168.x.x, 10.x.x.x)
+        const isLocalNetwork = /^http:\/\/(192\.168\.\d{1,3}\.\d{1,3}|10\.\d{1,3}\.\d{1,3}\.\d{1,3}|localhost|127\.0\.0\.1)(:\d+)?$/.test(origin);
+
+        if (allowedOrigins.includes(origin) || isLocalNetwork || process.env.NODE_ENV !== 'production') {
             callback(null, true);
         } else {
-            callback(new Error('Not allowed by CORS'));
+            callback(new Error(`Not allowed by CORS: ${origin}`));
         }
     },
     credentials: true
@@ -74,4 +83,5 @@ app.use(globalErrorHandler);
 const PORT = process.env.PORT || 4000;
 app.listen(PORT, () => {
     console.log(`✅ TikFlow Backend sur http://localhost:${PORT}`);
+    
 });

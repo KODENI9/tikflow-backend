@@ -201,16 +201,13 @@ export class UserService {
         });
 
         // Notify admin that a code has been submitted
-        const notifRef = this.notificationsCollection.doc();
-        await notifRef.set({
-            user_id: 'admin',
-            title: "Nouveau Code Reçu 🔑",
-            message: `Le client ${transData.tiktok_username} a transmis son code de confirmation pour la transaction ${transactionId}.`,
-            type: 'info',
-            link: `/admin/orders/${transactionId}`,
-            read: false,
-            created_at: new Date(),
-        });
+        const { notificationService } = require('./notification.service');
+        await notificationService.createAdminNotification(
+            "Nouveau Code Reçu 🔑",
+            `Le client ${transData.tiktok_username} a transmis son code de confirmation pour la transaction ${transactionId}.`,
+            'info',
+            `/admin/orders/${transactionId}`
+        );
 
         return "Code transmis avec succès !";
     }

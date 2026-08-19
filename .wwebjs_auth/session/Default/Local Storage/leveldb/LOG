@@ -1,0 +1,6 @@
+2026/08/17-21:51:09.635 465c Reusing MANIFEST E:\REACT\tikflow\backend\.wwebjs_auth\session\Default\Local Storage\leveldb/MANIFEST-000001
+2026/08/17-21:51:09.655 465c Recovering log #4
+2026/08/17-21:51:09.661 465c Reusing old log E:\REACT\tikflow\backend\.wwebjs_auth\session\Default\Local Storage\leveldb/000004.log 
+2026/08/17-21:53:11.311 2d00 Level-0 table #8: started
+2026/08/17-21:53:11.331 2d00 Level-0 table #8: 16454 bytes OK
+2026/08/17-21:53:11.337 2d00 Delete type=0 #4

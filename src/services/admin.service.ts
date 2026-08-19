@@ -214,13 +214,16 @@ export class AdminService {
                     updated_at: new Date()
                 });
 
+                const title = "Transaction Validée ! 🎉";
+                const msg = transData.type === 'recharge'
+                    ? `Votre compte a été crédité de ${transData.amount_cfa} CFA.`
+                    : `Votre compte est bien rechargé avec les ${transData.amount_coins} coins TikTok. 🎉`;
+
                 const notifRef = this.notificationsCollection.doc();
                 t.set(notifRef, {
                     user_id: transData.user_id,
-                    title: "Transaction Validée ! 🎉",
-                    message: transData.type === 'recharge'
-                        ? `Votre compte a été crédité de ${transData.amount_cfa} CFA.`
-                        : `Votre compte est bien rechargé avec les ${transData.amount_coins} coins TikTok. 🎉`,
+                    title: title,
+                    message: msg,
                     type: transData.type === 'recharge' ? 'recharge_success' : 'order_delivered',
                     read: false,
                     created_at: new Date(),
@@ -248,13 +251,17 @@ export class AdminService {
         });
         
         // Notification pour l'utilisateur
+        const notifTitle = "Code Gmail Requis 📧";
+        const notifMsg = `TikTok a envoyé un code de confirmation à votre compte Google (${transData.tiktok_username}). Veuillez le transmettre à l'administrateur rapidement.`;
+        const notifLink = `/dashboard/orders/${transactionId}/submit-code`;
+
         const notifRef = this.notificationsCollection.doc();
         await notifRef.set({
             user_id: transData.user_id,
-            title: "Code Gmail Requis 📧",
-            message: `TikTok a envoyé un code de confirmation à votre compte Google (${transData.tiktok_username}). Veuillez le transmettre à l'administrateur rapidement.`,
+            title: notifTitle,
+            message: notifMsg,
             type: 'warning',
-            link: `/dashboard/orders/${transactionId}/submit-code`,
+            link: notifLink,
             read: false,
             created_at: new Date(),
         });

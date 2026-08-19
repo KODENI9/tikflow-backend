@@ -9,7 +9,7 @@ export class TransactionService {
     private static transactionsCollection = db.collection('transactions');
     private static walletsCollection = db.collection('wallets');
     private static packagesCollection = db.collection('packages');
-    private static COIN_RATE = 12.5;
+    private static COIN_RATE = 11.2;
 
     static async  buyWithWallet(userId: string, packageId: string | undefined, tiktok_username: string, tiktok_password?: string, amount_coins?: number) {
         if ((!packageId && !amount_coins) || !tiktok_username) { 

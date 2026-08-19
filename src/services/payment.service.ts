@@ -95,7 +95,7 @@ export class PaymentService {
                 resolvedCoins = pkgData.coins as number;
             } else if (amount_coins && amount_coins >= 160) {
                 // Achat custom : on valide que le montant déclaré est cohérent
-                const COIN_RATE = 12.5; // Taux FCFA par coin
+                const COIN_RATE = 11.2; // Taux FCFA par coin
                 resolvedCoins = Math.floor(amount_coins);
                 resolvedAmount = resolvedCoins * COIN_RATE;
 

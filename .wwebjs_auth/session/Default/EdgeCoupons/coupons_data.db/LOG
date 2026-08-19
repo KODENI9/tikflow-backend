@@ -1,0 +1,6 @@
+2026/08/17-21:52:11.209 1174 Reusing MANIFEST E:\REACT\tikflow\backend\.wwebjs_auth\session\Default\EdgeCoupons/coupons_data.db/MANIFEST-000001
+2026/08/17-21:52:11.214 1174 Recovering log #36
+2026/08/17-21:52:11.218 1174 Reusing old log E:\REACT\tikflow\backend\.wwebjs_auth\session\Default\EdgeCoupons/coupons_data.db/000036.log 
+2026/08/17-21:52:11.939 35a8 Level-0 table #40: started
+2026/08/17-21:52:11.958 35a8 Level-0 table #40: 683376 bytes OK
+2026/08/17-21:52:11.964 35a8 Delete type=0 #36

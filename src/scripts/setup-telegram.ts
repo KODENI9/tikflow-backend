@@ -1,5 +1,6 @@
 import { TelegramClient } from "telegram";
 import { StringSession } from "telegram/sessions";
+// @ts-ignore
 import input from "input"; // npm i input
 
 const apiId = 38789325;
@@ -22,7 +23,7 @@ const stringSession = new StringSession("");
         
         console.log("Successfully connected to Telegram!");
         console.log("=== BEGIN SESSION STRING ===");
-        console.log(client.session.save() as string);
+        console.log(client.session.save() as unknown as string);
         console.log("=== END SESSION STRING ===");
         
         // Wait a bit and exit

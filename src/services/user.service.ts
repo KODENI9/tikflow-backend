@@ -52,6 +52,30 @@ export class UserService {
         };
     }
 
+    /**
+     * Helper to get a readable name for admin notifications
+     */
+    static async getUserDisplayName(userId: string): Promise<string> {
+        if (!userId) return 'Utilisateur Inconnu';
+        if (userId === 'admin') return 'Administrateur';
+        
+        try {
+            const userDoc = await this.usersCollection.doc(userId).get();
+            if (!userDoc.exists) return userId;
+            
+            const userData = userDoc.data();
+            if (userData) {
+                if (userData.fullname && userData.email) {
+                    return `${userData.fullname} (${userData.email})`;
+                }
+                return userData.fullname || userData.email || userId;
+            }
+        } catch (error) {
+            console.error(`[UserService] Error fetching user display name for ${userId}:`, error);
+        }
+        return userId;
+    }
+
     static async syncUser(userId: string, email: string | undefined, fullname: string | undefined, phoneNumber: string | undefined) {
         const userRef = this.usersCollection.doc(userId);
         const userDoc = await userRef.get();
@@ -202,9 +226,11 @@ export class UserService {
 
         // Notify admin that a code has been submitted
         const { notificationService } = require('./notification.service');
+        const userDisplayName = await this.getUserDisplayName(userId);
+        
         await notificationService.createAdminNotification(
             "Nouveau Code Reçu 🔑",
-            `Le client ${transData.tiktok_username} a transmis son code de confirmation pour la transaction ${transactionId}.`,
+            `Le client ${userDisplayName} (compte: ${transData.tiktok_username}) a transmis son code de confirmation pour la transaction ${transactionId}.`,
             'info',
             `/admin/orders/${transactionId}`
         );

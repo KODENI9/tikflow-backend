@@ -435,9 +435,12 @@ export class PaymentService {
             });
 
             // Notification admin pour intervention manuelle
+            const { UserService } = require('./user.service');
+            const userDisplayName = await UserService.getUserDisplayName(paymentData.userId);
+            
             await notificationService.createAdminNotification(
                 '⚠️ Livraison à vérifier',
-                `Le paiement MoneyFusion ${paymentId} (${paymentData.amount} FCFA) est PAID mais la livraison des coins a échoué pour l'utilisateur ${paymentData.userId}. Vérification manuelle requise.`,
+                `Le paiement MoneyFusion ${paymentId} (${paymentData.amount} FCFA) est PAID mais la livraison des coins a échoué pour l'utilisateur ${userDisplayName}. Vérification manuelle requise.`,
                 'warning',
                 `/admin/payments`
             );

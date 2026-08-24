@@ -80,18 +80,8 @@ export class TransactionService {
         });
 
         // Récupérer les infos de l'utilisateur pour une notification plus claire
-        const userDoc = await db.collection('users').doc(userId).get();
-        const userData = userDoc.data();
-        let userIdentifier = userId;
-
-        if (userData) {
-            const { fullname, email } = userData;
-            if (fullname && email) {
-                userIdentifier = `${fullname} (${email})`;
-            } else {
-                userIdentifier = fullname || email || userId;
-            }
-        }
+        const { UserService } = require('./user.service');
+        const userIdentifier = await UserService.getUserDisplayName(userId);
 
         // Notification pour l'admin
         await notificationService.createAdminNotification(
@@ -195,18 +185,8 @@ export class TransactionService {
         const docRef = await this.transactionsCollection.add(transactionData);
         
         // Récupérer les infos de l'utilisateur pour une notification plus claire
-        const userDoc = await db.collection('users').doc(userId).get();
-        const userData = userDoc.data();
-        let userIdentifier = userId;
-
-        if (userData) {
-            const { fullname, email } = userData;
-            if (fullname && email) {
-                userIdentifier = `${fullname} (${email})`;
-            } else {
-                userIdentifier = fullname || email || userId;
-            }
-        }
+        const { UserService: UserServiceRef } = require('./user.service');
+        const userIdentifier = await UserServiceRef.getUserDisplayName(userId);
 
         // Notification pour l'admin
         const notifTitle = isAutoVerified ? "Recharge AUTO-VALIDÉE ⚡" : "Nouvelle demande de recharge 💰";

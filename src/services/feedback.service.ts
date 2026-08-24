@@ -64,9 +64,12 @@ export class FeedbackService {
 
         // Notify admin about new feedback
         const { notificationService } = require('./notification.service');
+        const { UserService } = require('./user.service');
+        const userDisplayName = await UserService.getUserDisplayName(userId);
+        
         notificationService.createAdminNotification(
             "Nouveau Feedback Client 💬",
-            `L'utilisateur (${userData?.email || userId}) a laissé une note de ${rating}/5 : "${comment || 'Pas de commentaire'}"`,
+            `L'utilisateur ${userDisplayName} a laissé une note de ${rating}/5 : "${comment || 'Pas de commentaire'}"`,
             'info',
             '/admin/feedbacks'
         ).catch((err: any) => console.error('[FeedbackService] Error sending admin notification for feedback:', err));

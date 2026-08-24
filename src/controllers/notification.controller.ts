@@ -87,3 +87,36 @@ export const getAdminUnreadCount = async (req: Request, res: Response) => {
         });
     }
 };
+
+export const replyToNotification = async (req: Request, res: Response) => {
+    try {
+        // @ts-ignore
+        const userId = req.auth?.userId;
+        if (!userId) {
+            return res.status(401).json({ message: "Non autorisé" });
+        }
+
+        const { id } = req.params; // ID de la notification originale
+        const { message } = req.body;
+
+        if (!message || typeof message !== 'string' || message.trim() === '') {
+            return res.status(400).json({ message: "Message invalide ou vide" });
+        }
+
+        // Créer une notification pour l'admin
+        await notificationService.create({
+            user_id: 'admin',
+            title: `Réponse d'un utilisateur (${userId})`,
+            message: `Réponse à la notif ${id} :\n\n${message}`,
+            type: 'user_reply',
+        });
+
+        res.status(200).json({ message: "Réponse envoyée avec succès" });
+    } catch (error: any) {
+        console.error("[NotificationController] Error replying to notification:", error);
+        res.status(500).json({ 
+            message: "Erreur lors de l'envoi de la réponse",
+            error: error.message
+        });
+    }
+};

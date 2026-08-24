@@ -6,7 +6,8 @@ import {
     markAllAsRead, 
     getUnreadCount,
     getAdminNotifications,
-    getAdminUnreadCount
+    getAdminUnreadCount,
+    replyToNotification
 } from '../controllers/notification.controller';
 import { requireAuth, isAdmin } from '../middlewares/auth';
 
@@ -17,6 +18,7 @@ router.get('/', requireAuth, getNotifications);
 router.get('/unread-count', requireAuth, getUnreadCount);
 router.patch('/mark-all-read', requireAuth, markAllAsRead);
 router.patch('/:id/read', requireAuth, markAsRead);
+router.post('/:id/reply', requireAuth, replyToNotification);
 
 // Routes pour les admins
 router.get('/admin', requireAuth, isAdmin, getAdminNotifications);

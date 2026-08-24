@@ -136,12 +136,21 @@ class NotificationService {
 
         const telegramApiUrl = `https://api.telegram.org/bot${botToken}/sendMessage`;
         
-        let text = `🚨 *Nouvelle Notification Admin*\n*Titre:* ${title}\n*Message:* ${message}`;
+        const escapeHtml = (unsafe: string) => {
+            return unsafe
+                 .replace(/&/g, "&amp;")
+                 .replace(/</g, "&lt;")
+                 .replace(/>/g, "&gt;")
+                 .replace(/"/g, "&quot;")
+                 .replace(/'/g, "&#039;");
+        };
+
+        let text = `🚨 <b>Nouvelle Notification Admin</b>\n<b>Titre:</b> ${escapeHtml(title)}\n<b>Message:</b> ${escapeHtml(message)}`;
         if (link) {
             // Check if link is an absolute URL, if not, try to construct one (optional)
             const baseUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
             const fullLink = link.startsWith('http') ? link : `${baseUrl}${link.startsWith('/') ? '' : '/'}${link}`;
-            text += `\n[Voir plus](${fullLink})`;
+            text += `\n<a href="${fullLink}">Voir plus</a>`;
         }
 
         for (const targetId of targetChatIds) {
@@ -154,7 +163,7 @@ class NotificationService {
                     body: JSON.stringify({
                         chat_id: targetId,
                         text: text,
-                        parse_mode: 'Markdown',
+                        parse_mode: 'HTML',
                     }),
                 });
 

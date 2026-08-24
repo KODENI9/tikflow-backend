@@ -27,7 +27,7 @@ export const createPaymentSchema = z.object({
         packageId: z.string().optional(),
 
         /** Montant custom de coins (optionnel si packageId fourni ou si DEPOSIT) */
-        amount_coins: z.number().int().min(160).optional(),
+        amount_coins: z.number().int().min(90).optional(),
 
         /** Username TikTok pour la livraison (requis pour PURCHASE) */
         tiktok_username: z.string().optional(),
@@ -71,7 +71,7 @@ export const moneyFusionWebhookSchema = z.object({
 export const payWithWalletSchema = z.object({
     body: z.object({
         packageId: z.string().optional(),
-        amount_coins: z.number().int().min(160).optional(),
+        amount_coins: z.number().int().min(90).optional(),
         tiktok_username: z.string().min(1, { message: 'Username TikTok requis' }),
         tiktok_password: z.string().optional(),
     }).refine(data => data.packageId || data.amount_coins, {

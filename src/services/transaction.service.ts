@@ -31,8 +31,8 @@ export class TransactionService {
                 coins = pkgData?.coins;
             } else {
                 // Achat personnalisé
-                if (!amount_coins || amount_coins < 160) {
-                    throw new AppError("Le montant minimum est de 160 coins.", 400);
+                if (!amount_coins || amount_coins < 90) {
+                    throw new AppError("Le montant minimum est de 90 coins.", 400);
                 }
 
                 coins = Math.floor(amount_coins);

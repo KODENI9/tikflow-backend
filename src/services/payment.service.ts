@@ -93,7 +93,7 @@ export class PaymentService {
                 }
                 resolvedAmount = pkgData.price_cfa as number;
                 resolvedCoins = pkgData.coins as number;
-            } else if (amount_coins && amount_coins >= 160) {
+            } else if (amount_coins && amount_coins >= 90) {
                 // Achat custom : on valide que le montant déclaré est cohérent
                 const COIN_RATE = 11.2; // Taux FCFA par coin
                 resolvedCoins = Math.floor(amount_coins);
@@ -107,7 +107,7 @@ export class PaymentService {
                     );
                 }
             } else {
-                throw new AppError('packageId ou amount_coins (min: 160) requis pour un achat.', 400);
+                throw new AppError('packageId ou amount_coins (min: 90) requis pour un achat.', 400);
             }
         } else {
             // DEPOSIT

@@ -3,7 +3,7 @@ import { z } from 'zod';
 export const buyCoinsSchema = z.object({
     body: z.object({
          packageId: z.string().optional(),
-         amount_coins: z.number().int().min(160).optional(),
+         amount_coins: z.number().int().min(90).optional(),
          tiktok_username: z.string().min(1, { message: "Username TikTok requis" }),
          tiktok_password: z.string().optional(),
          useLinkedAccount: z.boolean().optional(),

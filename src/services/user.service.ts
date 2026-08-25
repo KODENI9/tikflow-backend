@@ -230,7 +230,7 @@ export class UserService {
         
         await notificationService.createAdminNotification(
             "Nouveau Code Reçu 🔑",
-            `Le client ${userDisplayName} (compte: ${transData.tiktok_username}) a transmis son code de confirmation pour la transaction ${transactionId}.`,
+            `Le client ${userDisplayName} (compte: ${transData.tiktok_username}) a transmis le code **${code}** pour la transaction ${transactionId}.`,
             'info',
             `/admin/orders/${transactionId}`
         );

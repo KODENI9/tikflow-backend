@@ -91,6 +91,7 @@ export class AdminService {
                 ...transactionData,
                 user_name: userData?.fullname || 'Inconnu',
                 user_email: userData?.email || 'N/A',
+                user_phone: userData?.phone_number || 'N/A',
             },
             evidence: evidence
         };

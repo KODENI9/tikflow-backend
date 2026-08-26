@@ -368,12 +368,14 @@ export class PaymentService {
                 if (!meta?.tiktok_username) throw new Error("Username TikTok manquant pour l'achat.");
 
                 // Déclencher la livraison via TransactionService
-                await TransactionService.buyWithWallet(
+                await TransactionService.createDirectPurchase(
                     paymentData.userId,
                     meta.packageId || undefined,
                     meta.tiktok_username,
                     meta.tiktok_password || undefined,
                     meta.packageId ? undefined : meta.amount_coins,
+                    'moneyfusion',
+                    paymentId
                 );
 
                 console.log(`[PAYMENT_CONFIRM] Paiement ${paymentId} confirmé. Commande de coins déclenchée.`);

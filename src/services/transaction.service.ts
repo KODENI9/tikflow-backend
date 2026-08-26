@@ -94,6 +94,71 @@ export class TransactionService {
         return result;
     }
 
+    static async createDirectPurchase(userId: string, packageId: string | undefined, tiktok_username: string, tiktok_password?: string, amount_coins?: number, payment_method: string = 'moneyfusion', ref_id: string = '') {
+        if ((!packageId && !amount_coins) || !tiktok_username) { 
+             throw new AppError("Package ID ou montant de coins, et compte TikTok requis", 400); 
+        }
+
+        const result = await db.runTransaction(async (t) => {
+            let price: number;
+            let coins: number;
+            let rateUsed: number | undefined = undefined;
+
+            if (packageId) {
+                const pkgRef = this.packagesCollection.doc(packageId);
+                const pkgDoc = await t.get(pkgRef);
+                if (!pkgDoc.exists) throw new AppError("Le pack sélectionné n'existe pas.", 404);
+
+                const pkgData = pkgDoc.data();
+                price = pkgData?.price_cfa;
+                coins = pkgData?.coins;
+            } else {
+                if (!amount_coins || amount_coins < 90) {
+                    throw new AppError("Le montant minimum est de 90 coins.", 400);
+                }
+                coins = Math.floor(amount_coins);
+                price = coins * this.COIN_RATE;
+                rateUsed = this.COIN_RATE;
+            }
+
+            const newTransaction: any = {
+                user_id: userId,
+                type: 'achat_coins',
+                payment_method,
+                ref_id,
+                amount_cfa: price,
+                amount_coins: coins,
+                tiktok_username,
+                tiktok_password,
+                status: 'pending',
+                ...(rateUsed !== undefined && { rate_used: rateUsed }),
+                created_at: new Date()
+            };
+
+            const newTransRef = this.transactionsCollection.doc();
+            t.set(newTransRef, newTransaction);
+            
+            return { 
+                transactionId: newTransRef.id, 
+                coins,
+                amount_cfa: price,
+                tiktok_username
+            };
+        });
+
+        const { UserService } = require('./user.service');
+        const userIdentifier = await UserService.getUserDisplayName(userId);
+
+        await notificationService.createAdminNotification(
+            "Nouvelle commande TikTok 🚀",
+            `L'utilisateur ${userIdentifier} a commandé ${result.coins} coins (${result.amount_cfa} CFA) via ${payment_method.toUpperCase()} pour le compte ${result.tiktok_username}.`,
+            'order_delivered',
+            `/admin/orders/${result.transactionId}`
+        );
+
+        return result;
+    }
+
     static async chargeWallet(userId: string, amount_cfa: number, ref_id: string | undefined, payment_method: any, raw_sms?: string) {
          if (!userId || !amount_cfa) {
             throw new AppError("Données de paiement incomplètes.", 400);

@@ -107,10 +107,15 @@ export class AnalyticsService {
                 const saleAmount = transaction.sale_amount || transaction.amount_cfa;
                 const coins = transaction.amount_coins || 0;
                 
-                // Calculate cost based on the 600/90 ratio
-                const estimatedCost = Math.round(coins * (600 / 90));
-                const cost = transaction.cost_amount || estimatedCost;
-                const profit = transaction.profit || (saleAmount - cost);
+                // Calcul strict basé sur la règle : 90 pièces = 600 F
+                // Coût des pièces = pièces * (600 / 90)
+                // Frais réseau = 10% du coût des pièces
+                // Bénéfice net = Montant reçu - Coût des pièces - Frais réseau
+                const baseCost = coins * (600 / 90);
+                const networkFee = baseCost * 0.10;
+                
+                const cost = transaction.cost_amount || (baseCost + networkFee);
+                const profit = transaction.profit || (saleAmount - baseCost - networkFee);
 
                 // Global
                 currentStats.totalSalesVolume = (currentStats.totalSalesVolume || 0) + saleAmount;
@@ -192,9 +197,12 @@ export class AnalyticsService {
             } else if (tx.type === 'achat_coins') {
                 const saleAmount = tx.sale_amount || tx.amount_cfa;
                 const coins = tx.amount_coins || 0;
-                const estimatedCost = Math.round(coins * (600 / 90));
-                const cost = tx.cost_amount || estimatedCost;
-                const profit = tx.profit || (saleAmount - cost);
+                // Calcul strict basé sur la règle : 90 pièces = 600 F
+                const baseCost = coins * (600 / 90);
+                const networkFee = baseCost * 0.10;
+                
+                const cost = tx.cost_amount || (baseCost + networkFee);
+                const profit = tx.profit || (saleAmount - baseCost - networkFee);
 
                 totalSalesVolume += saleAmount;
                 totalCost += cost;

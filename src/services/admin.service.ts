@@ -136,6 +136,18 @@ export class AdminService {
             t.update(smsDoc.ref, { status: 'used' });
             t.update(userTransRef, { status: 'completed', updated_at: new Date() });
             
+            // Analytics Update
+            // Need to run outside transaction or inside? updateStats runs its own transaction, 
+            // so better run it after this transaction finishes, or asynchronously.
+            setTimeout(() => {
+                const { AnalyticsService } = require('./analytics.service');
+                AnalyticsService.updateStats({
+                    id: transactionId,
+                    ...userTrans,
+                    status: 'completed'
+                }).catch(console.error);
+            }, 0);
+            
             // Notification pour l'utilisateur
             const notifRef = this.notificationsCollection.doc();
             t.set(notifRef, {
@@ -214,6 +226,15 @@ export class AdminService {
                     admin_note: admin_note || "Validé par l'administrateur",
                     updated_at: new Date()
                 });
+
+                // Analytics update (asynchronous)
+                setTimeout(() => {
+                    const { AnalyticsService } = require('./analytics.service');
+                    AnalyticsService.updateStats({
+                        ...transData,
+                        status: 'completed'
+                    }).catch(console.error);
+                }, 0);
 
                 const title = "Transaction Validée ! 🎉";
                 const msg = transData.type === 'recharge'

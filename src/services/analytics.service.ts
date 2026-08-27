@@ -105,16 +105,23 @@ export class AnalyticsService {
             } else if (transaction.type === 'achat_coins' && transaction.status === 'completed') {
                 // Sales
                 const saleAmount = transaction.sale_amount || transaction.amount_cfa;
-                const cost = transaction.cost_amount || 0;
-                const profit = transaction.profit || (saleAmount - cost);
                 const coins = transaction.amount_coins || 0;
+                
+                // Calculate cost based on the 600/90 ratio
+                const estimatedCost = Math.round(coins * (600 / 90));
+                const cost = transaction.cost_amount || estimatedCost;
+                const profit = transaction.profit || (saleAmount - cost);
 
                 // Global
                 currentStats.totalSalesVolume = (currentStats.totalSalesVolume || 0) + saleAmount;
                 currentStats.totalCost = (currentStats.totalCost || 0) + cost;
                 currentStats.totalProfit = (currentStats.totalProfit || 0) + profit;
                 currentStats.totalCoinsSold = (currentStats.totalCoinsSold || 0) + coins;
-                currentStats.totalUsersBalance = (currentStats.totalUsersBalance || 0) - saleAmount; // User spent money
+                
+                // Only reduce totalUsersBalance if they paid with their wallet (skthib)
+                if (transaction.payment_method === 'skthib') {
+                    currentStats.totalUsersBalance = (currentStats.totalUsersBalance || 0) - saleAmount;
+                }
                 currentStats.totalTransactions = (currentStats.totalTransactions || 0) + 1;
 
                 // Monthly
@@ -153,5 +160,74 @@ export class AnalyticsService {
             .get();
 
         return snapshot.data().count;
+    }
+
+    static async rebuildStatsFromScratch() {
+        const transactionsSnapshot = await db.collection('transactions').where('status', '==', 'completed').get();
+        const usersSnapshot = await this.usersCollection.count().get();
+        
+        let totalDeposits = 0;
+        let totalSalesVolume = 0;
+        let totalCost = 0;
+        let totalProfit = 0;
+        let totalTransactions = 0;
+        let totalCoinsSold = 0;
+        const monthlyStats: Record<string, MonthlyStat> = {};
+
+        transactionsSnapshot.docs.forEach(doc => {
+            const tx = doc.data() as Transaction;
+            const txDate = tx.created_at instanceof admin.firestore.Timestamp ? tx.created_at.toDate() : new Date(tx.created_at);
+            const monthKey = `${txDate.getFullYear()}-${String(txDate.getMonth() + 1).padStart(2, '0')}`;
+
+            if (!monthlyStats[monthKey]) {
+                monthlyStats[monthKey] = { deposits: 0, sales: 0, cost: 0, profit: 0, transactions: 0 };
+            }
+
+            totalTransactions += 1;
+            monthlyStats[monthKey].transactions += 1;
+
+            if (tx.type === 'recharge') {
+                totalDeposits += tx.amount_cfa;
+                monthlyStats[monthKey].deposits += tx.amount_cfa;
+            } else if (tx.type === 'achat_coins') {
+                const saleAmount = tx.sale_amount || tx.amount_cfa;
+                const coins = tx.amount_coins || 0;
+                const estimatedCost = Math.round(coins * (600 / 90));
+                const cost = tx.cost_amount || estimatedCost;
+                const profit = tx.profit || (saleAmount - cost);
+
+                totalSalesVolume += saleAmount;
+                totalCost += cost;
+                totalProfit += profit;
+                totalCoinsSold += coins;
+
+                monthlyStats[monthKey].sales += saleAmount;
+                monthlyStats[monthKey].cost += cost;
+                monthlyStats[monthKey].profit += profit;
+            }
+        });
+
+        const walletsSnapshot = await db.collection('wallets').get();
+        let totalUsersBalance = 0;
+        walletsSnapshot.docs.forEach(doc => {
+            totalUsersBalance += (doc.data().balance || 0);
+        });
+
+        const newStats: PlatformStats = {
+            totalDeposits,
+            totalSalesVolume,
+            totalCost,
+            totalProfit,
+            averageTransactionValue: totalTransactions > 0 ? totalSalesVolume / totalTransactions : 0,
+            totalUsersBalance,
+            totalTransactions,
+            totalCoinsSold,
+            totalUsers: usersSnapshot.data().count,
+            monthlyStats,
+            updated_at: new Date()
+        };
+
+        await this.statsDocRef.set(newStats);
+        return newStats;
     }
 }

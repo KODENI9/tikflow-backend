@@ -59,4 +59,8 @@ router.delete('/recipients/:id', requireAuth, isAdmin, deleteRecipient);
 router.get('/settings', requireAuth, isAdmin, getGlobalSettings);
 router.patch('/settings', requireAuth, isAdmin, updateGlobalSettings);
 
+// Analytics Rebuild
+import { rebuildStats } from '../controllers/admin.controller';
+router.post('/stats/rebuild', requireAuth, isAdmin, rebuildStats);
+
 export default router;

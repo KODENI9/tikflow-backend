@@ -417,6 +417,21 @@ export class PaymentService {
                 });
 
                 console.log(`[PAYMENT_CONFIRM] Paiement ${paymentId} confirmé. Wallet rechargé.`);
+                
+                // Analytics update (asynchronous)
+                setTimeout(() => {
+                    const { AnalyticsService } = require('./analytics.service');
+                    AnalyticsService.updateStats({
+                        user_id: paymentData.userId,
+                        type: 'recharge',
+                        amount_cfa: paymentData.amount,
+                        amount_coins: 0,
+                        payment_method: 'moneyfusion',
+                        ref_id: paymentData.moneyFusionToken || paymentId,
+                        status: 'completed',
+                        created_at: new Date()
+                    } as any).catch(console.error);
+                }, 0);
 
                 // Notification user : recharge
                 await notificationService.create({

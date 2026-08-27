@@ -160,6 +160,15 @@ export class AdminService {
                 created_at: new Date(),
             });
 
+            // Envoi Push Notification (asynchrone)
+            setTimeout(() => {
+                NotificationPushService.sendToUser(userTrans.user_id, {
+                    title: "Compte Crédité ! 🎉",
+                    body: `Votre recharge de ${userTrans.amount_cfa} CFA a été validée.`,
+                    url: '/dashboard/history'
+                }).catch(console.error);
+            }, 0);
+
             return "Paiement vérifié et Wallet crédité !";
         });
     }
@@ -297,6 +306,15 @@ export class AdminService {
             read: false,
             created_at: new Date(),
         });
+
+        // Envoi Push Notification (asynchrone)
+        setTimeout(() => {
+            NotificationPushService.sendToUser(transData.user_id, {
+                title: notifTitle,
+                body: notifMsg,
+                url: notifLink
+            }).catch(console.error);
+        }, 0);
 
         return "Demande de code envoyée au client.";
     }

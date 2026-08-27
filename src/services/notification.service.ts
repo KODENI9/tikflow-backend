@@ -29,6 +29,22 @@ class NotificationService {
             telegramCallService.makeAdminCall().catch((err: any) => {
                 console.error('[NotificationService] Telegram call error:', err);
             });
+            
+            // Web Push pour tous les admins
+            const NotificationPushService = require('./notification.push.service').default;
+            NotificationPushService.broadcastAdmins({
+                title: notification.title,
+                body: notification.message,
+                url: notification.link || '/admin/dashboard'
+            }).catch((err: any) => console.error('[NotificationService] Admin push error:', err));
+        } else {
+            // Web Push pour le client
+            const NotificationPushService = require('./notification.push.service').default;
+            NotificationPushService.sendToUser(notification.user_id, {
+                title: notification.title,
+                body: notification.message,
+                url: notification.link || '/dashboard/history'
+            }).catch((err: any) => console.error('[NotificationService] User push error:', err));
         }
 
         return docRef.id;

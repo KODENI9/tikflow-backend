@@ -33,7 +33,7 @@ class NotificationPushService {
   /**
    * Save a user's push subscription to Firestore.
    */
-  async saveSubscription(userId: string, subscription: PushSubscriptionPayload, userAgent: string = "") {
+  async saveSubscription(userId: string, subscription: PushSubscriptionPayload, userAgent: string = "", isAdmin: boolean = false) {
     try {
       const subscriptionsRef = db.collection('push_subscriptions');
       
@@ -44,11 +44,11 @@ class NotificationPushService {
       const existing = await subscriptionsRef.where('endpoint', '==', subscription.endpoint).get();
       
       if (!existing.empty) {
-        // Update existing (maybe user logged in with a different account on same browser)
         const docId = existing.docs[0].id;
         await subscriptionsRef.doc(docId).update({
           userId,
           userAgent,
+          isAdmin,
           updatedAt: new Date()
         });
         return;
@@ -58,6 +58,7 @@ class NotificationPushService {
         userId,
         subscription,
         userAgent,
+        isAdmin,
         createdAt: new Date(),
         updatedAt: new Date()
       });
@@ -156,6 +157,39 @@ class NotificationPushService {
       return successCount;
     } catch (error) {
       console.error("Error broadcasting push notifications:", error);
+      return 0;
+    }
+  }
+
+  /**
+   * Broadcast a notification to all subscribed admins.
+   */
+  async broadcastAdmins(payload: PushNotificationPayload) {
+    try {
+      const subscriptionsRef = db.collection('push_subscriptions');
+      const snapshot = await subscriptionsRef.where('isAdmin', '==', true).get();
+      
+      if (snapshot.empty) return 0;
+
+      const stringifiedPayload = JSON.stringify(payload);
+      let successCount = 0;
+
+      const sendPromises = snapshot.docs.map(async (doc) => {
+        const subData = doc.data();
+        try {
+          await webpush.sendNotification(subData.subscription, stringifiedPayload);
+          successCount++;
+        } catch (error: any) {
+          if (error.statusCode === 410 || error.statusCode === 404) {
+            await doc.ref.delete();
+          }
+        }
+      });
+
+      await Promise.all(sendPromises);
+      return successCount;
+    } catch (error) {
+      console.error("Error broadcasting to admins:", error);
       return 0;
     }
   }

@@ -93,7 +93,7 @@ export class TransactionService {
         return result;
     }
 
-    static async createDirectPurchase(userId: string, packageId: string | undefined, tiktok_username: string, tiktok_password?: string, amount_coins?: number, payment_method: string = 'moneyfusion', ref_id: string = '') {
+    static async createDirectPurchase(userId: string, packageId: string | undefined, tiktok_username: string, tiktok_password?: string, amount_coins?: number, payment_method: string = 'moneyfusion', ref_id: string = '', user_phone?: string) {
         if ((!packageId && !amount_coins) || !tiktok_username) { 
              throw new AppError("Package ID ou montant de coins, et compte TikTok requis", 400); 
         }
@@ -129,6 +129,7 @@ export class TransactionService {
                 amount_coins: coins,
                 tiktok_username,
                 tiktok_password,
+                user_phone: user_phone || null,
                 status: 'pending',
                 ...(rateUsed !== undefined && { rate_used: rateUsed }),
                 created_at: new Date()

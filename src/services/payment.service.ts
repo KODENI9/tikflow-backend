@@ -375,7 +375,8 @@ export class PaymentService {
                     meta.tiktok_password || undefined,
                     meta.packageId ? undefined : meta.amount_coins,
                     'moneyfusion',
-                    paymentId
+                    paymentId,
+                    paymentData.phone
                 );
 
                 console.log(`[PAYMENT_CONFIRM] Paiement ${paymentId} confirmé. Commande de coins déclenchée.`);

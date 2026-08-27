@@ -11,6 +11,7 @@ import userRoutes from './routes/user.routes';
 import notificationRoutes from './routes/notification.routes';
 import feedbackRoutes from './routes/feedback.routes';
 import paymentRoutes from './routes/payment.routes';
+import pushRoutes from './routes/push.routes';
 import { globalErrorHandler } from './middlewares/error.middleware';
 
 
@@ -71,6 +72,7 @@ app.use('/api/admin', adminRoutes);     // Gestion côté admin
 app.use('/api/notifications', notificationRoutes); // Notifications
 app.use('/api/feedback', feedbackRoutes); // Feedback
 app.use('/api/payments', paymentRoutes); // Paiements MoneyFusion
+app.use('/api/push', pushRoutes); // Abonnements Web Push
 
 // --- Route de santé ---
 app.get('/health', (req, res) => {

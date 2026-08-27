@@ -227,3 +227,27 @@ export const rebuildStats = async (req: Request, res: Response, next: NextFuncti
         next(error);
     }
 };
+
+import NotificationPushService from '../services/notification.push.service';
+
+export const sendAdminPushNotification = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const { title, body, icon, url, targetUserId } = req.body;
+
+        if (!title || !body) {
+            return res.status(400).json({ success: false, message: "Title and body are required." });
+        }
+
+        const payload = { title, body, icon, url };
+
+        if (targetUserId && targetUserId !== "all") {
+            await NotificationPushService.sendToUser(targetUserId, payload);
+            return res.status(200).json({ success: true, message: `Notification sent to user ${targetUserId}` });
+        } else {
+            const count = await NotificationPushService.broadcast(payload);
+            return res.status(200).json({ success: true, message: `Notification broadcasted to ${count} devices` });
+        }
+    } catch (error) {
+        next(error);
+    }
+};

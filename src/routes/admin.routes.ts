@@ -63,4 +63,8 @@ router.patch('/settings', requireAuth, isAdmin, updateGlobalSettings);
 import { rebuildStats } from '../controllers/admin.controller';
 router.post('/stats/rebuild', requireAuth, isAdmin, rebuildStats);
 
+// Push Notifications
+import { sendAdminPushNotification } from '../controllers/admin.controller';
+router.post('/push/send', requireAuth, isAdmin, sendAdminPushNotification);
+
 export default router;

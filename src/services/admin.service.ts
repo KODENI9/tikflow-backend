@@ -6,6 +6,7 @@ import { Recipient } from '../models/Recipient';
 import { AppError } from '../utils/AppError';
 import { notificationService } from './notification.service';
 import { AnalyticsService } from './analytics.service';
+import NotificationPushService from './notification.push.service';
 
 export class AdminService {
     private static transactionsCollection = db.collection('transactions');
@@ -250,6 +251,15 @@ export class AdminService {
                     read: false,
                     created_at: new Date(),
                 });
+
+                // Envoi Push Notification (asynchrone)
+                setTimeout(() => {
+                    NotificationPushService.sendToUser(transData.user_id, {
+                        title: title,
+                        body: msg,
+                        url: transData.type === 'achat_coins' ? `/dashboard/orders/${transactionId}` : '/dashboard/history'
+                    }).catch(console.error);
+                }, 0);
 
                 return "Transaction validée avec succès !";
             });

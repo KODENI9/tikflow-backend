@@ -447,8 +447,8 @@ export class AdminService {
     }
 
     static async getReceivedPayments() {
-        const snapshot = await this.paymentsCollection
-            .orderBy('received_at', 'desc')
+        const snapshot = await db.collection('payments')
+            .orderBy('createdAt', 'desc')
             .limit(50)
             .get();
 

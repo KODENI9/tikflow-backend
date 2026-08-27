@@ -12,6 +12,7 @@ import notificationRoutes from './routes/notification.routes';
 import feedbackRoutes from './routes/feedback.routes';
 import paymentRoutes from './routes/payment.routes';
 import pushRoutes from './routes/push.routes';
+import trackingRoutes from './routes/tracking.routes';
 import { globalErrorHandler } from './middlewares/error.middleware';
 
 
@@ -73,6 +74,7 @@ app.use('/api/notifications', notificationRoutes); // Notifications
 app.use('/api/feedback', feedbackRoutes); // Feedback
 app.use('/api/payments', paymentRoutes); // Paiements MoneyFusion
 app.use('/api/push', pushRoutes); // Abonnements Web Push
+app.use('/api/tracking', trackingRoutes); // PWA Tracking
 
 // --- Route de santé ---
 app.get('/health', (req, res) => {

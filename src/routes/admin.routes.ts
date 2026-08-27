@@ -3,7 +3,7 @@ import { Router } from 'express';
 import { adjustUserBalance, createPackage, getAdminStats, getAllTransactions, getAllUsers, getPendingTransactions, getReceivedPayments, getTransactionById, updateTransactionStatus, verifyAndCredit, getPackages, getPackageById, requestCode, updatePackage, getAllPackagesAdmin, createRecipient, deleteRecipient, getRecipients, updateRecipient, getGlobalSettings, updateGlobalSettings, sendUserNotification } from '../controllers/admin.controller';
 import { getAllFeedbacks } from '../controllers/feedback.controller';
 import { isAdmin, requireAuth } from '../middlewares/auth';
-import { handleSMSWebhook } from '../controllers/sms.controller';
+
 import { verifyWebhookKey } from '../middlewares/webhookGuard';
 
 const router = Router();
@@ -28,7 +28,7 @@ router.get('/packages/:id', getPackageById);
 
 // Route que l'application Android va appeler
 // Route protégée par la X-API-KEY
-router.post('/sms-webhook', verifyWebhookKey, handleSMSWebhook);
+
 
 router.get('/transactions', requireAuth, isAdmin, getAllTransactions);
 

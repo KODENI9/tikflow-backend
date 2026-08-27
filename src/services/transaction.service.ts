@@ -3,7 +3,6 @@ import { db } from '../config/firebase';
 import { Transaction } from '../models/Transaction';
 import { AppError } from '../utils/AppError';
 import { notificationService } from './notification.service';
-import { SmsService } from './sms.service';
 
 export class TransactionService {
     private static transactionsCollection = db.collection('transactions');
@@ -167,39 +166,7 @@ export class TransactionService {
         let refIdToUse = ref_id;
         let isAutoVerified = false;
 
-        // 1. Si on a un SMS brut, on tente de l'extraire
-        if (raw_sms) {
-            const { ref_id: extractedRef, amount: extractedAmount } = SmsService.parseManualSMS(raw_sms);
-            
-            // 2. Vérification du montant (optionnelle si non trouvé, mais on bloque si trouvé et divergent)
-            if (extractedAmount > 0 && Math.abs(extractedAmount - amount_cfa) > 10) {
-                 throw new AppError(`Le montant trouvé dans le SMS (${extractedAmount} CFA) ne correspond pas au montant déclaré (${amount_cfa} CFA).`, 400);
-            }
-
-            if (extractedRef) {
-                refIdToUse = extractedRef;
-                
-                // 2. Vérification automatique contre les paiements reçus par webhook
-                const verifiedPayment = await SmsService.verifyAgainstReceivedPayments(extractedRef, amount_cfa);
-                if (verifiedPayment) {
-                    console.log(`[CHARGE_WALLET] Paiement auto-vérifié pour Ref: ${extractedRef}`);
-                    isAutoVerified = true;
-                    
-                    // Marquer le paiement reçu comme utilisé
-                    await db.collection('received_payments').doc(verifiedPayment.id).update({
-                        status: 'used',
-                        used_at: new Date(),
-                        user_id: userId
-                    });
-                }
-            }
-        }
-
         if (!refIdToUse) {
-            // Si pas de Ref ID et pas de SMS valide (ou parsing échoué)
-            if (raw_sms) {
-                 throw new AppError("Impossible d'extraire une référence du SMS. Veuillez vérifier le texte ou entrer la référence manuellement.", 400);
-            }
             throw new AppError("ID de référence requis.", 400);
         }
 

@@ -182,6 +182,12 @@ export class AnalyticsService {
         transactionsSnapshot.docs.forEach(doc => {
             const tx = doc.data() as Transaction;
             const txDate = tx.created_at instanceof admin.firestore.Timestamp ? tx.created_at.toDate() : new Date(tx.created_at);
+            
+            // Ignorer les transactions avant le 25 Août 2026 pour avoir des stats "propres"
+            if (txDate < new Date('2026-08-25T00:00:00Z')) {
+                return;
+            }
+
             const monthKey = `${txDate.getFullYear()}-${String(txDate.getMonth() + 1).padStart(2, '0')}`;
 
             if (!monthlyStats[monthKey]) {

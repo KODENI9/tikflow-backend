@@ -5,6 +5,51 @@ import { db } from '../config/firebase';
 const trackingCollection = db.collection('pwa_tracking');
 
 /**
+ * Admin endpoint — remotely triggers the install prompt on the user's screen.
+ * Sets a Firestore flag that the user's browser listens to in real-time.
+ */
+export const triggerInstallPrompt = async (req: Request, res: Response) => {
+    try {
+        const { userId } = req.params;
+        if (!userId) {
+            return res.status(400).json({ message: 'userId manquant' });
+        }
+
+        const docRef = trackingCollection.doc(userId);
+        await docRef.set(
+            { install_prompt_trigger: true, install_prompt_triggered_at: new Date() },
+            { merge: true }
+        );
+
+        res.status(200).json({ success: true, message: 'Déclencheur envoyé' });
+    } catch (error: any) {
+        console.error('[TrackingController] triggerInstallPrompt error:', error);
+        res.status(500).json({ message: 'Erreur lors du déclenchement' });
+    }
+};
+
+/**
+ * User endpoint — called by the browser after the install prompt is shown,
+ * to acknowledge and clear the trigger flag.
+ */
+export const clearInstallTrigger = async (req: Request, res: Response) => {
+    try {
+        // @ts-ignore
+        const userId = req.auth?.userId;
+        if (!userId) return res.status(401).json({ message: 'Non autorisé' });
+
+        await trackingCollection.doc(userId).set(
+            { install_prompt_trigger: false },
+            { merge: true }
+        );
+
+        res.status(200).json({ success: true });
+    } catch (error: any) {
+        res.status(500).json({ message: 'Erreur' });
+    }
+};
+
+/**
  * Called by the frontend when the user installs the PWA (appinstalled event)
  * or when the app is opened in standalone mode.
  * Stores/updates a tracking document per userId.

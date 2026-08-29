@@ -15,7 +15,7 @@ export const triggerInstallPrompt = async (req: Request, res: Response) => {
             return res.status(400).json({ message: 'userId manquant' });
         }
 
-        const docRef = trackingCollection.doc(userId);
+        const docRef = trackingCollection.doc(userId as string);
         await docRef.set(
             { install_prompt_trigger: true, install_prompt_triggered_at: new Date() },
             { merge: true }

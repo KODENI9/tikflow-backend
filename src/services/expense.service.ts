@@ -1,4 +1,4 @@
-import { firestore } from '../config/firebase';
+import { db as firestore } from '../config/firebase';
 import { v4 as uuidv4 } from 'uuid';
 
 export interface ExpenseRecord {
@@ -30,7 +30,7 @@ export class ExpenseService {
     public static async getAllRecords(): Promise<ExpenseRecord[]> {
         const snapshot = await this.collection.orderBy('date', 'desc').get();
         const records: ExpenseRecord[] = [];
-        snapshot.forEach(doc => {
+        snapshot.forEach((doc: any) => {
             records.push(doc.data() as ExpenseRecord);
         });
         return records;

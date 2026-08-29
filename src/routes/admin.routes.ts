@@ -1,6 +1,6 @@
 // src/routes/admin.routes.ts
 import { Router } from 'express';
-import { adjustUserBalance, createPackage, getAdminStats, getAllTransactions, getAllUsers, getPendingTransactions, getReceivedPayments, getTransactionById, updateTransactionStatus, verifyAndCredit, getPackages, getPackageById, requestCode, updatePackage, getAllPackagesAdmin, createRecipient, deleteRecipient, getRecipients, updateRecipient, getGlobalSettings, updateGlobalSettings, sendUserNotification } from '../controllers/admin.controller';
+import { adjustUserBalance, createPackage, getAdminStats, getAllTransactions, getAllUsers, getPendingTransactions, getReceivedPayments, getTransactionById, updateTransactionStatus, verifyAndCredit, getPackages, getPackageById, requestCode, updatePackage, getAllPackagesAdmin, createRecipient, deleteRecipient, getRecipients, updateRecipient, getGlobalSettings, updateGlobalSettings, sendUserNotification, addExpense, getExpenses, deleteExpense } from '../controllers/admin.controller';
 import { getAllFeedbacks } from '../controllers/feedback.controller';
 import { isAdmin, requireAuth } from '../middlewares/auth';
 
@@ -66,5 +66,10 @@ router.post('/stats/rebuild', requireAuth, isAdmin, rebuildStats);
 // Push Notifications
 import { sendAdminPushNotification } from '../controllers/admin.controller';
 router.post('/push/send', requireAuth, isAdmin, sendAdminPushNotification);
+
+// Treasury / Expenses
+router.post('/expenses', requireAuth, isAdmin, addExpense);
+router.get('/expenses', requireAuth, isAdmin, getExpenses);
+router.delete('/expenses/:id', requireAuth, isAdmin, deleteExpense);
 
 export default router;

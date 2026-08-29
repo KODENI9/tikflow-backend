@@ -1,6 +1,7 @@
 // src/controllers/admin.controller.ts
 import { Request, Response, NextFunction } from "express";
 import { AdminService } from "../services/admin.service";
+import { ExpenseService } from "../services/expense.service";
 
 export const getPendingTransactions = async (req: Request, res: Response, next: NextFunction) => {
     try {
@@ -247,6 +248,45 @@ export const sendAdminPushNotification = async (req: Request, res: Response, nex
             const count = await NotificationPushService.broadcast(payload);
             return res.status(200).json({ success: true, message: `Notification broadcasted to ${count} devices` });
         }
+    } catch (error) {
+        next(error);
+    }
+};
+
+// --- TREASURY / EXPENSES ---
+export const addExpense = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const { title, amount, type, category, date } = req.body;
+        const uid = (req as any).user?.id || (req as any).user?.uid || 'admin';
+        
+        const id = await ExpenseService.addRecord({
+            title,
+            amount: Number(amount),
+            type,
+            category,
+            date,
+            createdBy: uid
+        });
+        res.status(201).json({ success: true, id });
+    } catch (error) {
+        next(error);
+    }
+};
+
+export const getExpenses = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const expenses = await ExpenseService.getAllRecords();
+        res.status(200).json({ success: true, data: expenses });
+    } catch (error) {
+        next(error);
+    }
+};
+
+export const deleteExpense = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const { id } = req.params;
+        await ExpenseService.deleteRecord(id as string);
+        res.status(200).json({ success: true });
     } catch (error) {
         next(error);
     }

@@ -72,4 +72,8 @@ router.post('/expenses', requireAuth, isAdmin, addExpense);
 router.get('/expenses', requireAuth, isAdmin, getExpenses);
 router.delete('/expenses/:id', requireAuth, isAdmin, deleteExpense);
 
+// Marketing Automation
+import { triggerMarketingCampaigns } from '../controllers/admin.controller';
+router.post('/marketing/trigger', requireAuth, isAdmin, triggerMarketingCampaigns);
+
 export default router;

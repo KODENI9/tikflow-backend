@@ -4,6 +4,7 @@ import dotenv from 'dotenv';
 import cors from 'cors';
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
+import cron from 'node-cron';
 import { db } from './config/firebase';
 import adminRoutes from './routes/admin.routes';
 import orderRoutes from './routes/order.routes';
@@ -14,6 +15,14 @@ import paymentRoutes from './routes/payment.routes';
 import pushRoutes from './routes/push.routes';
 import trackingRoutes from './routes/tracking.routes';
 import { globalErrorHandler } from './middlewares/error.middleware';
+import { MarketingService } from './services/marketing.service';
+
+// --- Tâches Planifiées (Cron Jobs) ---
+// S'exécute tous les jours à 10h00 du matin (Heure du serveur)
+cron.schedule('0 10 * * *', () => {
+    console.log('[CRON] Lancement des campagnes marketing automatisées...');
+    MarketingService.runAllCampaigns();
+});
 
 
 

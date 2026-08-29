@@ -21,6 +21,7 @@
     "helmet": "^8.1.0",
     "input": "^1.0.1",
     "libphonenumber-js": "^1.13.11",
+    "node-cron": "^4.6.0",
     "telegram": "^2.26.22",
     "web-push": "^3.6.7",
     "zod": "^4.3.6"
@@ -29,6 +30,7 @@
     "@types/cors": "^2.8.19",
     "@types/express": "^5.0.6",
     "@types/node": "^25.0.10",
+    "@types/node-cron": "^3.0.11",
     "@types/web-push": "^3.6.4",
     "ts-node-dev": "^2.0.0",
     "typescript": "^5.9.3"

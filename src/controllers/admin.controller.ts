@@ -1,7 +1,7 @@
-// src/controllers/admin.controller.ts
 import { Request, Response, NextFunction } from "express";
 import { AdminService } from "../services/admin.service";
 import { ExpenseService } from "../services/expense.service";
+import { MarketingService } from "../services/marketing.service";
 
 export const getPendingTransactions = async (req: Request, res: Response, next: NextFunction) => {
     try {
@@ -287,6 +287,16 @@ export const deleteExpense = async (req: Request, res: Response, next: NextFunct
         const { id } = req.params;
         await ExpenseService.deleteRecord(id as string);
         res.status(200).json({ success: true });
+    } catch (error) {
+        next(error);
+    }
+};
+
+// --- MARKETING AUTOMATION ---
+export const triggerMarketingCampaigns = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        MarketingService.runAllCampaigns();
+        res.status(200).json({ success: true, message: "Les campagnes marketing ont été déclenchées en arrière-plan." });
     } catch (error) {
         next(error);
     }

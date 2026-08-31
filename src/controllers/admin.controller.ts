@@ -2,6 +2,7 @@ import { Request, Response, NextFunction } from "express";
 import { AdminService } from "../services/admin.service";
 import { ExpenseService } from "../services/expense.service";
 import { MarketingService } from "../services/marketing.service";
+import { db } from "../config/firebase";
 
 export const getPendingTransactions = async (req: Request, res: Response, next: NextFunction) => {
     try {
@@ -267,7 +268,7 @@ export const sendAdminPushNotification = async (req: Request, res: Response, nex
             const usersSnapshot = await db.collection('users').get();
             const uids: string[] = [];
 
-            usersSnapshot.docs.forEach(doc => {
+            usersSnapshot.docs.forEach((doc: any) => {
                 const clerkId = doc.data().clerk_id || doc.id;
                 if (clerkId) uids.push(clerkId);
             });
@@ -276,7 +277,7 @@ export const sendAdminPushNotification = async (req: Request, res: Response, nex
             for (let i = 0; i < uids.length; i += chunkSize) {
                 const chunk = uids.slice(i, i + chunkSize);
                 const batch = db.batch();
-                chunk.forEach(uid => {
+                chunk.forEach((uid: string) => {
                     const docRef = notificationsCol.doc();
                     batch.set(docRef, {
                         user_id: uid,

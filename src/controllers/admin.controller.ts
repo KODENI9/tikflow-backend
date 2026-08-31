@@ -229,24 +229,72 @@ export const rebuildStats = async (req: Request, res: Response, next: NextFuncti
     }
 };
 
-import NotificationPushService from '../services/notification.push.service';
-
 export const sendAdminPushNotification = async (req: Request, res: Response, next: NextFunction) => {
     try {
         const { title, body, icon, url, targetUserId } = req.body;
 
         if (!title || !body) {
-            return res.status(400).json({ success: false, message: "Title and body are required." });
+            return res.status(400).json({ success: false, message: "Le titre et le message sont requis." });
         }
 
-        const payload = { title, body, icon, url };
+        const payload = { 
+            title, 
+            body, 
+            icon: icon || "/icons/icon-192x192.png", 
+            url: url || "/dashboard/notifications" 
+        };
+
+        const notificationsCol = db.collection('notifications');
 
         if (targetUserId && targetUserId !== "all") {
+            // 1. Sauvegarde Firestore pour cet utilisateur spécifique
+            await notificationsCol.add({
+                user_id: targetUserId,
+                title,
+                message: body,
+                type: 'announcement',
+                link: url || '/dashboard/notifications',
+                read: false,
+                created_at: new Date()
+            });
+
+            // 2. Envoi du Web Push
+            const NotificationPushService = require('../services/notification.push.service').default;
             await NotificationPushService.sendToUser(targetUserId, payload);
-            return res.status(200).json({ success: true, message: `Notification sent to user ${targetUserId}` });
+            return res.status(200).json({ success: true, message: `Notification envoyée avec succès à l'utilisateur` });
         } else {
+            // Sauvegarde pour tous les utilisateurs existants
+            const usersSnapshot = await db.collection('users').get();
+            const uids: string[] = [];
+
+            usersSnapshot.docs.forEach(doc => {
+                const clerkId = doc.data().clerk_id || doc.id;
+                if (clerkId) uids.push(clerkId);
+            });
+
+            const chunkSize = 400;
+            for (let i = 0; i < uids.length; i += chunkSize) {
+                const chunk = uids.slice(i, i + chunkSize);
+                const batch = db.batch();
+                chunk.forEach(uid => {
+                    const docRef = notificationsCol.doc();
+                    batch.set(docRef, {
+                        user_id: uid,
+                        title,
+                        message: body,
+                        type: 'announcement',
+                        link: url || '/dashboard/notifications',
+                        read: false,
+                        created_at: new Date()
+                    });
+                });
+                await batch.commit();
+            }
+
+            // Envoi du Web Push Broadcast
+            const NotificationPushService = require('../services/notification.push.service').default;
             const count = await NotificationPushService.broadcast(payload);
-            return res.status(200).json({ success: true, message: `Notification broadcasted to ${count} devices` });
+            return res.status(200).json({ success: true, message: `Notification diffusée avec succès (${count} appareils)` });
         }
     } catch (error) {
         next(error);

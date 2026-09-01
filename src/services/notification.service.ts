@@ -72,10 +72,9 @@ class NotificationService {
             });
         } catch (error: any) {
             console.warn(`[NotificationService] Possible missing index for user_id=${userId}. Falling back to simple query...`);
-            // Fallback: fetch without orderBy and sort manually
+            // Fallback: fetch without orderBy and limit, then sort manually and slice
             const fallbackSnapshot = await this.collection
                 .where('user_id', '==', userId)
-                .limit(limit)
                 .get();
 
             const docs = fallbackSnapshot.docs.map(doc => {
@@ -92,7 +91,7 @@ class NotificationService {
                 const dateA = new Date(a.created_at).getTime();
                 const dateB = new Date(b.created_at).getTime();
                 return dateB - dateA;
-            });
+            }).slice(0, limit);
         }
     }
 

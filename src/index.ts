@@ -52,7 +52,9 @@ const allowedOrigins = [
     'http://127.0.0.1:3000',
     'http://10.0.10.35:3000', 
     'https://tikflow.com',
-    'https://tikflowaf.vercel.app'
+    'https://tikflowaf.vercel.app',
+    'https://pay.moneyfusion.net',
+    'https://moneyfusion.net'
 ]; 
 
 app.use(cors({

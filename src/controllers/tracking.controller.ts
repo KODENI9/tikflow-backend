@@ -128,6 +128,13 @@ export const getPwaTrackingStats = async (req: Request, res: Response) => {
             };
         });
 
+        // Get all push subscriptions
+        const pushSnap = await db.collection('push_subscriptions').get();
+        const pushMap: Record<string, boolean> = {};
+        pushSnap.docs.forEach(doc => {
+            pushMap[doc.data().userId] = true;
+        });
+
         // Merge: every user gets a tracking status
         const result = Object.values(usersMap)
             .filter((u: any) => u.role !== 'admin') // skip admins
@@ -135,6 +142,7 @@ export const getPwaTrackingStats = async (req: Request, res: Response) => {
                 ...user,
                 tracking: trackingMap[user.id] || null,
                 pwa_installed: !!trackingMap[user.id]?.pwa_installed,
+                push_enabled: !!pushMap[user.id],
             }))
             .sort((a: any, b: any) => {
                 // Installed users first
@@ -145,6 +153,7 @@ export const getPwaTrackingStats = async (req: Request, res: Response) => {
 
         const totalUsers = result.length;
         const installedCount = result.filter((u: any) => u.pwa_installed).length;
+        const pushEnabledCount = result.filter((u: any) => u.push_enabled).length;
 
         res.status(200).json({
             success: true,
@@ -155,6 +164,7 @@ export const getPwaTrackingStats = async (req: Request, res: Response) => {
                     installed_count: installedCount,
                     not_installed_count: totalUsers - installedCount,
                     install_rate: totalUsers > 0 ? Math.round((installedCount / totalUsers) * 100) : 0,
+                    push_enabled_count: pushEnabledCount,
                 },
             },
         });

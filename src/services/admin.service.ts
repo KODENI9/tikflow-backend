@@ -540,10 +540,16 @@ export class AdminService {
             // Default settings if none exist
             return {
                 support_phone: "",
+                bot_enabled: true,
                 updated_at: new Date()
             };
         }
-        return doc.data();
+        const data = doc.data() || {};
+        return {
+            support_phone: "",
+            bot_enabled: true,
+            ...data
+        };
     }
 
     static async updateGlobalSettings(updates: any) {

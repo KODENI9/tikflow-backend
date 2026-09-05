@@ -127,6 +127,22 @@ export class BotService {
       return;
     }
 
+    // Vérifier si le robot est activé globalement dans les paramètres admin
+    try {
+      const settingsDoc = await db.collection('settings').doc('app_config').get();
+      const isBotEnabled = settingsDoc.exists ? settingsDoc.data()?.bot_enabled !== false : true;
+
+      if (!isBotEnabled) {
+        await this.updateFirestoreState(orderId, {
+          orderId,
+          status: 'paused',
+          currentStep: '🔴 Robot désactivé globalement dans les paramètres administrateur.',
+        });
+        await this.addLog(orderId, '🔴 Tâche non exécutée : Le robot de livraison est actuellement désactivé globalement dans les paramètres admin.', 'warn');
+        return;
+      }
+    } catch (err) {}
+
     const username = details?.username || '';
     const password = details?.password || '';
     const coins = details?.coins || 1000;
@@ -513,6 +529,15 @@ export class BotService {
    */
   public static async checkAndAutoTriggerPendingOrders() {
     try {
+      // Vérifier si le robot est activé globalement dans les paramètres admin
+      const settingsDoc = await db.collection('settings').doc('app_config').get();
+      const isBotEnabled = settingsDoc.exists ? settingsDoc.data()?.bot_enabled !== false : true;
+
+      if (!isBotEnabled) {
+        // Robot désactivé globalement, ne pas déclencher la file d'attente
+        return;
+      }
+
       const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
 
       const snap = await db.collection('transactions')

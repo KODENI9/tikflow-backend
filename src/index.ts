@@ -76,10 +76,13 @@ app.use(cors({
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+import botRoutes from './routes/bot.routes';
+
 // --- Routes API ---
 app.use('/api/users', userRoutes);    // Profil, Wallet
 app.use('/api/orders', orderRoutes);    // Achat côté client
 app.use('/api/admin', adminRoutes);     // Gestion côté admin
+app.use('/api/admin/bot', botRoutes);   // Robot automatique Puppeteer & Live Admin
 app.use('/api/notifications', notificationRoutes); // Notifications
 app.use('/api/feedback', feedbackRoutes); // Feedback
 app.use('/api/payments', paymentRoutes); // Paiements MoneyFusion

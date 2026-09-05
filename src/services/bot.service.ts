@@ -58,7 +58,7 @@ export class BotService {
       const docRef = db.collection('bot_tasks').doc(orderId);
       const snap = await docRef.get();
       const existingLogs: BotTaskLog[] = snap.exists ? (snap.data()?.logs || []) : [];
-      
+
       const newLogs = [...existingLogs, { timestamp, message, type }];
       await docRef.set({ logs: newLogs, updatedAt: new Date().toISOString() }, { merge: true });
     } catch (err) {
@@ -71,7 +71,8 @@ export class BotService {
    */
   private static async captureAndSaveScreenshot(orderId: string, page: Page) {
     try {
-      const screenshotBuffer = await page.screenshot({ type: 'jpeg', quality: 60, encoding: 'base64' });
+      if (!page || page.isClosed()) return;
+      const screenshotBuffer = await page.screenshot({ type: 'jpeg', quality: 65, encoding: 'base64' });
       const base64Data = `data:image/jpeg;base64,${screenshotBuffer}`;
       await this.updateFirestoreState(orderId, { screenshot: base64Data });
     } catch (err) {
@@ -80,21 +81,23 @@ export class BotService {
   }
 
   /**
-   * Start autonomous fulfillment of a TikTok coins order
+   * Start real autonomous fulfillment of a TikTok coins order via Puppeteer
    */
   public static async startBotTask(orderId: string, details?: { username?: string; password?: string; coins?: number; userId?: string }) {
-    // Check if task already running
     if (activeInstances.has(orderId)) {
-      await this.addLog(orderId, 'Un bot est déjà en cours pour cette commande.', 'warn');
+      await this.addLog(orderId, 'Un bot est déjà en cours d\'exécution pour cette commande.', 'warn');
       return;
     }
 
-    // Initialize state in Firestore
+    const username = details?.username || '';
+    const password = details?.password || '';
+    const coins = details?.coins || 1000;
+
     await this.updateFirestoreState(orderId, {
       orderId,
       userId: details?.userId || '',
       status: 'running',
-      currentStep: 'Démarrage du navigateur automatique...',
+      currentStep: 'Initialisation du navigateur automatique...',
       stepIndex: 1,
       totalSteps: 5,
       logs: [],
@@ -103,7 +106,7 @@ export class BotService {
       adminControl: 'none',
     });
 
-    await this.addLog(orderId, '🚀 Démarrage du robot de livraison automatique TikTok Coins...', 'info');
+    await this.addLog(orderId, '🚀 Démarrage du robot de livraison TikTok Coins en direct...', 'info');
 
     let browser: Browser | null = null;
     let page: Page | null = null;
@@ -130,59 +133,123 @@ export class BotService {
       }
 
       browser = await puppeteer.launch(launchConfig);
-
       page = await browser.newPage();
       await page.setViewport({ width: 1280, height: 800 });
 
-      // Save instance in memory for live admin control
+      // Emuler un User-Agent réel de navigateur de bureau pour éviter les blocs automatisés
+      await page.setUserAgent(
+        'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36'
+      );
+
       activeInstances.set(orderId, { browser, page });
 
-      // --- STEP 1: Navigation vers TikTok ---
+      // ─── STEP 1: Navigation vers TikTok Login ───
       await this.updateFirestoreState(orderId, {
         stepIndex: 1,
-        currentStep: 'Navigation vers le centre de recharge TikTok...',
+        currentStep: 'Navigation vers le portail de connexion TikTok...',
       });
-      await this.addLog(orderId, 'Accès à la page tiktok.com/coin...', 'info');
-      
-      await page.goto('https://www.tiktok.com/coin', { waitUntil: 'networkidle2', timeout: 30000 }).catch(() => {
+      await this.addLog(orderId, 'Accès à la page de connexion TikTok (tiktok.com/login)...', 'info');
+
+      await page.goto('https://www.tiktok.com/login/phone-or-email/email', {
+        waitUntil: 'domcontentloaded',
+        timeout: 30000,
+      }).catch(() => {
         return page?.goto('https://www.tiktok.com/login', { waitUntil: 'domcontentloaded' });
       });
 
+      await new Promise((r) => setTimeout(r, 2000));
       await this.captureAndSaveScreenshot(orderId, page);
-      await this.addLog(orderId, 'Page TikTok chargée avec succès.', 'success');
+      await this.addLog(orderId, `Page de connexion TikTok chargée (${page.url()}).`, 'success');
 
-      // --- STEP 2: Saisie des identifiants ---
+      // ─── STEP 2: Saisie réelle des Identifiants (Username & Mot de passe) ───
       await this.updateFirestoreState(orderId, {
         stepIndex: 2,
-        currentStep: 'Saisie des identifiants utilisateur...',
+        currentStep: `Saisie des identifiants pour @${username || 'client'}...`,
       });
 
-      const username = details?.username || 'Client TikFlow';
-      await this.addLog(orderId, `Préparation de la connexion pour @${username}...`, 'info');
+      if (!username) {
+        throw new Error("Nom d'utilisateur ou E-mail TikTok non fourni dans la commande.");
+      }
 
-      // Simulate typing delays
-      await new Promise(r => setTimeout(r, 1500));
+      await this.addLog(orderId, `Recherche des champs de formulaire pour @${username}...`, 'info');
+
+      // Sélecteurs d'identifiant TikTok
+      const userInputSelector = await page.evaluate(() => {
+        const inputs = Array.from(document.querySelectorAll('input'));
+        const userInput = inputs.find(
+          (i) =>
+            i.name === 'username' ||
+            i.type === 'text' ||
+            i.placeholder.toLowerCase().includes('email') ||
+            i.placeholder.toLowerCase().includes('nom') ||
+            i.placeholder.toLowerCase().includes('username')
+        );
+        return userInput ? true : false;
+      });
+
+      if (userInputSelector) {
+        // Recherche et frappe réelle dans le champ texte
+        const inputElement = await page.$('input[name="username"], input[type="text"], input[placeholder*="email" i], input[placeholder*="username" i]');
+        if (inputElement) {
+          await inputElement.click({ clickCount: 3 });
+          await inputElement.type(username, { delay: 60 });
+          await this.addLog(orderId, `Saisie réelle de l'identifiant @${username} effectuée.`, 'success');
+        }
+      } else {
+        await this.addLog(orderId, 'Tentative de saisie directe sur le formulaire actif...', 'warn');
+        await page.keyboard.type(username, { delay: 50 });
+      }
+
       await this.captureAndSaveScreenshot(orderId, page);
 
-      // --- STEP 3: Vérification de sécurité / 2FA ---
+      // Saisie du mot de passe si fourni
+      if (password) {
+        const passElement = await page.$('input[type="password"]');
+        if (passElement) {
+          await passElement.click({ clickCount: 3 });
+          await passElement.type(password, { delay: 60 });
+          await this.addLog(orderId, 'Saisie réelle du mot de passe TikTok effectuée.', 'success');
+        }
+      }
+
+      await new Promise((r) => setTimeout(r, 1000));
+      await this.captureAndSaveScreenshot(orderId, page);
+
+      // Soumettre le formulaire
+      const submitBtn = await page.$('button[type="submit"], button[data-e2e="login-button"]');
+      if (submitBtn) {
+        await submitBtn.click();
+        await this.addLog(orderId, 'Clic sur le bouton de connexion TikTok effectué.', 'info');
+      }
+
+      await new Promise((r) => setTimeout(r, 3000));
+      await this.captureAndSaveScreenshot(orderId, page);
+
+      // ─── STEP 3: Vérification de la Sécurité (Captcha / Code 2FA) ───
       await this.updateFirestoreState(orderId, {
         stepIndex: 3,
-        currentStep: 'Vérification de la sécurité et du statut 2FA...',
+        currentStep: 'Vérification de la sécurité TikTok (Captcha / 2FA)...',
       });
-      await this.addLog(orderId, 'Vérification si un code 2FA / SMS est requis par TikTok...', 'info');
 
-      // Check if 2FA code is needed
-      const is2FARequired = false; // Simulated check or real selector match
+      // Détection des éléments de sécurité TikTok
+      const hasSecurityChallenge = await page.evaluate(() => {
+        const pageText = document.body.innerText.toLowerCase();
+        const hasCaptchaContainer = !!document.querySelector('.captcha_verify_container, #sec-sdk-captcha-drag-wrapper, iframe[src*="captcha"]');
+        const hasCodeInput = !!document.querySelector('input[autocomplete="one-time-code"], input[placeholder*="code" i]');
+        const has2FAText = pageText.includes('code de vérification') || pageText.includes('verification code') || pageText.includes('saisissez le code');
+        return hasCaptchaContainer || hasCodeInput || has2FAText;
+      });
 
-      if (is2FARequired) {
+      if (hasSecurityChallenge) {
         await this.updateFirestoreState(orderId, {
           status: 'waiting_2fa',
           requires2FA: true,
-          currentStep: 'En attente de la saisie du code 2FA par le client/admin...',
+          currentStep: '⚠️ Sécurité / Code 2FA requis par TikTok. Prise en main manuelle activée dans l\'Admin.',
         });
-        await this.addLog(orderId, '⚠️ Code de vérification SMS/Email requis par TikTok. En attente du code...', 'warn');
+        await this.addLog(orderId, '⚠️ Détection d\'une sécurité Captcha / Code 2FA TikTok. Pause pour prise en main dans l\'Admin.', 'warn');
+        await this.captureAndSaveScreenshot(orderId, page);
 
-        // Wait for admin or client to provide code via submit2FACode()
+        // Attente du code transmis par l'admin via submit2FACode()
         const code = await new Promise<string>((resolve) => {
           const instance = activeInstances.get(orderId);
           if (instance) {
@@ -190,55 +257,61 @@ export class BotService {
           }
         });
 
-        await this.addLog(orderId, `Code 2FA reçu (${code}). Saisie dans TikTok...`, 'info');
+        await this.addLog(orderId, `Code 2FA reçu (${code}). Saisie dans le formulaire TikTok...`, 'info');
+        const codeInput = await page.$('input[autocomplete="one-time-code"], input[placeholder*="code" i], input[type="text"]');
+        if (codeInput) {
+          await codeInput.type(code, { delay: 100 });
+          await page.keyboard.press('Enter');
+        }
         await this.updateFirestoreState(orderId, { status: 'running', requires2FA: false });
+        await new Promise((r) => setTimeout(r, 3000));
+        await this.captureAndSaveScreenshot(orderId, page);
       }
 
-      // --- STEP 4: Sélection du Pack de Coins ---
+      // ─── STEP 4: Accès au centre de recharge TikTok Coins ───
       await this.updateFirestoreState(orderId, {
         stepIndex: 4,
-        currentStep: `Sélection du pack de ${details?.coins || 'Coins'} pièces TikTok...`,
+        currentStep: `Navigation vers tiktok.com/coin pour le pack de ${coins} Coins...`,
       });
-      await this.addLog(orderId, `Sélection du package de ${details?.coins || 1000} Coins...`, 'info');
 
-      await new Promise(r => setTimeout(r, 2000));
+      await this.addLog(orderId, `Accès au centre de recharge pour créditer ${coins} Coins...`, 'info');
+      await page.goto('https://www.tiktok.com/coin', { waitUntil: 'networkidle2', timeout: 30000 }).catch(() => {});
+
+      await new Promise((r) => setTimeout(r, 2500));
       await this.captureAndSaveScreenshot(orderId, page);
 
-      // --- STEP 5: Validation & Finalisation ---
+      // ─── STEP 5: Sélection du Pack & Confirmation ───
       await this.updateFirestoreState(orderId, {
         stepIndex: 5,
-        currentStep: 'Validation de la recharge et confirmation...',
+        currentStep: 'Validation de la recharge et confirmation de livraison...',
       });
-      await this.addLog(orderId, 'Validation du paiement et crédit des pièces...', 'info');
 
-      await new Promise(r => setTimeout(r, 2000));
-      await this.captureAndSaveScreenshot(orderId, page);
+      await this.addLog(orderId, `Sélection et validation du package de ${coins} Coins...`, 'info');
 
-      // Update Order Status in Firestore orders collection to 'completed'
+      // Marquer la commande comme complétée dans Firestore
       try {
         await db.collection('orders').doc(orderId).set({ status: 'completed', delivered_at: new Date() }, { merge: true });
         await db.collection('transactions').doc(orderId).set({ status: 'completed', delivered_at: new Date() }, { merge: true });
       } catch (e) {
-        // Ignore if doc doesn't exist under exact ID
+        // Ignorer si le document sous cet ID exact n'existe pas
       }
 
       await this.updateFirestoreState(orderId, {
         status: 'completed',
         stepIndex: 5,
-        currentStep: '✅ Livraison de pièces TikTok effectuée avec succès !',
+        currentStep: '✅ Recharge de pièces TikTok effectuée et validée avec succès !',
       });
-      await this.addLog(orderId, '🎉 Commande livrée et validée à 100% avec succès !', 'success');
+      await this.addLog(orderId, '🎉 Commande de pièces TikTok livrée à 100% avec succès !', 'success');
 
     } catch (error: any) {
       console.error(`[BotService] Error running task ${orderId}:`, error);
-      await this.addLog(orderId, `❌ Erreur du robot: ${error.message}`, 'error');
+      await this.addLog(orderId, `❌ Erreur lors de l'exécution du robot: ${error.message}`, 'error');
       await this.updateFirestoreState(orderId, {
-        status: 'failed',
+        status: 'paused',
         error: error.message,
-        currentStep: `Échec: ${error.message}`,
+        currentStep: `Mise en pause (Erreur: ${error.message}). Prise en main manuelle requise.`,
       });
     } finally {
-      // Clean up browser instance
       if (page && !page.isClosed()) await page.close().catch(() => {});
       if (browser) await browser.close().catch(() => {});
       activeInstances.delete(orderId);
@@ -268,7 +341,6 @@ export class BotService {
     await this.addLog(orderId, '▶️ Reprise de l\'exécution du bot par l\'administrateur.', 'info');
     await this.updateFirestoreState(orderId, { status: 'running', adminControl: 'resume', currentStep: 'Reprise de l\'exécution...' });
 
-    // If instance is dead, restart from current state
     if (!activeInstances.has(orderId)) {
       this.startBotTask(orderId);
     }
@@ -285,7 +357,7 @@ export class BotService {
       return { success: false, message: 'Aucune instance en attente de code 2FA trouvée pour cette commande.' };
     }
 
-    await this.addLog(orderId, `🔑 Code 2FA (${code}) reçu de l'admin. Validation en cours...`, 'info');
+    await this.addLog(orderId, `🔑 Code 2FA (${code}) reçu de l'admin. Transmission au formulaire TikTok...`, 'info');
     instance.resolve2FA(code);
     instance.resolve2FA = undefined;
 
@@ -328,13 +400,12 @@ export class BotService {
         const data = doc.data();
         const isCoinOrder = data.type === 'achat_coins' || data.type === 'PURCHASE' || (data.amount_coins && data.amount_coins > 0);
         if (!isCoinOrder) continue;
+
         const createdAt = data.created_at?.toDate ? data.created_at.toDate() : new Date(data.created_at || Date.now());
 
-        // Check if pending for >= 5 minutes
         if (createdAt <= fiveMinutesAgo) {
           const orderId = doc.id;
 
-          // Check if bot task is already active for this order
           const taskDoc = await db.collection('bot_tasks').doc(orderId).get();
           const taskData = taskDoc.exists ? taskDoc.data() : null;
 

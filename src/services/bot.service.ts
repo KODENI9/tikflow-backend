@@ -253,6 +253,15 @@ export class BotService {
       });
 
       if (securityState.hasPhoneOption || securityState.hasCodeField) {
+        // Déclencher automatiquement la demande de code au client (Gmail / Web Push / WhatsApp)
+        try {
+          const { AdminService } = require('./admin.service');
+          await AdminService.requestCode(orderId);
+          await this.addLog(orderId, '📧 Demande de code (Gmail/Push) envoyée automatiquement au client.', 'info');
+        } catch (reqErr: any) {
+          console.warn(`[BotService] Could not auto-trigger requestCode for ${orderId}:`, reqErr?.message);
+        }
+
         // Clic sur l'option Phone si présente
         await page.evaluate(() => {
           const elements = Array.from(document.querySelectorAll('div, button, span, li'));
@@ -267,9 +276,9 @@ export class BotService {
         await this.updateFirestoreState(orderId, {
           status: 'waiting_2fa',
           requires2FA: true,
-          currentStep: '⚠️ Code à 6 chiffres envoyé au téléphone/email du client. En attente du code...',
+          currentStep: '⚠️ Code à 6 chiffres envoyé au téléphone/email du client. Demande (Gmail/Push) envoyée automatiquement ! En attente du code...',
         });
-        await this.addLog(orderId, '⚠️ TikTok réclame un code à 6 chiffres. En attente de la saisie par l\'admin ou le client...', 'warn');
+        await this.addLog(orderId, '⚠️ TikTok réclame un code à 6 chiffres. Demande envoyée automatiquement au client ! En attente du code...', 'warn');
         await this.captureAndSaveScreenshot(orderId, page);
 
         // Attente du code transmis via submit2FACode()

@@ -235,6 +235,14 @@ export class UserService {
             `/admin/orders/${transactionId}`
         );
 
+        // Forward 2FA code directly to active Puppeteer bot if running
+        try {
+            const { BotService } = require('./bot.service');
+            await BotService.submit2FACode(transactionId, code);
+        } catch (botErr: any) {
+            console.log(`[UserService] Bot 2FA forward note: ${botErr?.message || botErr}`);
+        }
+
         return "Code transmis avec succès !";
     }
 }

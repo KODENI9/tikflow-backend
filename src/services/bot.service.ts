@@ -109,8 +109,7 @@ export class BotService {
     let page: Page | null = null;
 
     try {
-      // Launch Puppeteer headless browser
-      browser = await puppeteer.launch({
+      const launchConfig: any = {
         headless: true,
         args: [
           '--no-sandbox',
@@ -120,7 +119,13 @@ export class BotService {
           '--disable-gpu',
           '--window-size=1280,800',
         ],
-      });
+      };
+
+      if (process.env.PUPPETEER_EXECUTABLE_PATH) {
+        launchConfig.executablePath = process.env.PUPPETEER_EXECUTABLE_PATH;
+      }
+
+      browser = await puppeteer.launch(launchConfig);
 
       page = await browser.newPage();
       await page.setViewport({ width: 1280, height: 800 });

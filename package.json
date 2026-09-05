@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "ts-node-dev --respawn --transpile-only src/index.ts",
     "build": "tsc",
-    "postinstall": "PUPPETEER_CACHE_DIR=/opt/render/project/src/.cache/puppeteer npx puppeteer browsers install chrome || true",
+    "postinstall": "npx puppeteer browsers install chrome",
     "start": "ls -R dist && node ./dist/index.js"
   },
   "keywords": [],

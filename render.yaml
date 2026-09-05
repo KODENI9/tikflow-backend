@@ -3,7 +3,7 @@ services:
     name: tikflow-api-backend
     env: node
     plan: free
-    buildCommand: PUPPETEER_CACHE_DIR=/opt/render/project/src/.cache/puppeteer npx puppeteer browsers install chrome && npm install && npm run build && ls -R dist
+    buildCommand: npm install && npx puppeteer browsers install chrome && npm run build && ls -R dist
     startCommand: npm start
     healthCheckPath: /health
     envVars:

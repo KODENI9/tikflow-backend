@@ -109,6 +109,10 @@ export class BotService {
     let page: Page | null = null;
 
     try {
+      if (!process.env.PUPPETEER_CACHE_DIR) {
+        process.env.PUPPETEER_CACHE_DIR = '/opt/render/project/src/.cache/puppeteer';
+      }
+
       const launchConfig: any = {
         headless: true,
         args: [

@@ -188,12 +188,14 @@ export class BotService {
       });
       await this.addLog(orderId, 'Accès direct à tiktok.com/coin...', 'info');
 
-      await page.goto('https://www.tiktok.com/coin', {
-        waitUntil: 'networkidle2',
-        timeout: 35000,
-      }).catch(() => {
-        return page?.goto('https://www.tiktok.com/login/phone-or-email/email', { waitUntil: 'domcontentloaded' });
-      });
+      try {
+        await page.goto('https://www.tiktok.com/coin', {
+          waitUntil: 'domcontentloaded',
+          timeout: 45000,
+        });
+      } catch (navError: any) {
+        console.warn(`[BotService] Initial navigation note for ${orderId}: ${navError?.message}`);
+      }
 
       await new Promise((r) => setTimeout(r, 2000));
       await this.captureAndSaveScreenshot(orderId, page);
@@ -372,7 +374,9 @@ export class BotService {
 
       // S'assurer d'être sur /coin
       if (!page.url().includes('/coin')) {
-        await page.goto('https://www.tiktok.com/coin', { waitUntil: 'networkidle2', timeout: 30000 }).catch(() => {});
+        try {
+          await page.goto('https://www.tiktok.com/coin', { waitUntil: 'domcontentloaded', timeout: 45000 });
+        } catch (e) {}
         await new Promise((r) => setTimeout(r, 2500));
       }
 

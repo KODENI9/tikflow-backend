@@ -17,12 +17,19 @@ import trackingRoutes from './routes/tracking.routes';
 import { globalErrorHandler } from './middlewares/error.middleware';
 import { MarketingService } from './services/marketing.service';
 
-// --- Tâches Planifiées (Cron Jobs) ---
+import { BotService } from './services/bot.service';
+
+// --- Tâches Planifiées (Cron Jobs & Auto-Triggers) ---
 // S'exécute tous les jours à 10h00 du matin (Heure du serveur)
 cron.schedule('0 10 * * *', () => {
     console.log('[CRON] Lancement des campagnes marketing automatisées...');
     MarketingService.runAllCampaigns();
 });
+
+// Vérification de l'auto-déclenchement des commandes en attente depuis >= 5 min (Toutes les 30 sec)
+setInterval(() => {
+    BotService.checkAndAutoTriggerPendingOrders();
+}, 30000);
 
 
 

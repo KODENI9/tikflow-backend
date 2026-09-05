@@ -299,4 +299,51 @@ export class BotService {
 
     return { success: true, message: 'Tâche annulée.' };
   }
+
+  /**
+   * Scans pending transactions in Firestore and automatically triggers the bot
+   * for any order that has been pending for 5 minutes (300,000 ms) or longer
+   * without admin intervention.
+   */
+  public static async checkAndAutoTriggerPendingOrders() {
+    try {
+      const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
+
+      const snap = await db.collection('transactions')
+        .where('type', '==', 'achat_coins')
+        .where('status', '==', 'pending')
+        .get();
+
+      if (snap.empty) return;
+
+      for (const doc of snap.docs) {
+        const data = doc.data();
+        const createdAt = data.created_at?.toDate ? data.created_at.toDate() : new Date(data.created_at || Date.now());
+
+        // Check if pending for >= 5 minutes
+        if (createdAt <= fiveMinutesAgo) {
+          const orderId = doc.id;
+
+          // Check if bot task is already active for this order
+          const taskDoc = await db.collection('bot_tasks').doc(orderId).get();
+          const taskData = taskDoc.exists ? taskDoc.data() : null;
+
+          if (!taskData || (taskData.status !== 'running' && taskData.status !== 'completed' && taskData.status !== 'paused' && taskData.status !== 'waiting_2fa')) {
+            console.log(`[BotService] Auto-triggering bot for order ${orderId} (Pending >= 5 min)`);
+
+            this.startBotTask(orderId, {
+              username: data.tiktok_username,
+              password: data.tiktok_password,
+              coins: data.coins_count || data.amount_coins || 1000,
+              userId: data.user_id,
+            });
+
+            await this.addLog(orderId, '⏰ Déclenchement automatique du robot (Délai de 5 minutes dépassé sans intervention admin).', 'warn');
+          }
+        }
+      }
+    } catch (err) {
+      console.error('[BotService] Error in checkAndAutoTriggerPendingOrders:', err);
+    }
+  }
 }

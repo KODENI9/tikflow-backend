@@ -47,15 +47,14 @@ app.use(limiter);
 
 // Configuration CORS avec support dev et réseau local
 const allowedOrigins = [
-    process.env.FRONTEND_URL, 
-    'http://localhost:3000', 
+    process.env.FRONTEND_URL,
+    'http://localhost:3000',
     'http://127.0.0.1:3000',
-    'http://10.0.10.35:3000', 
-    'https://tikflow.com',
-    'https://tikflowaf.vercel.app',
+    'http://10.0.10.35:3000',
+    'https://tikflow.online',
     'https://pay.moneyfusion.net',
     'https://moneyfusion.net'
-]; 
+];
 
 app.use(cors({
     origin: (origin, callback) => {
@@ -98,5 +97,5 @@ app.use(globalErrorHandler);
 const PORT = process.env.PORT || 4000;
 app.listen(PORT, () => {
     console.log(`✅ TikFlow Backend sur http://localhost:${PORT}`);
-    
+
 });

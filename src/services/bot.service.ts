@@ -310,7 +310,6 @@ export class BotService {
       const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
 
       const snap = await db.collection('transactions')
-        .where('type', '==', 'achat_coins')
         .where('status', '==', 'pending')
         .get();
 
@@ -318,6 +317,8 @@ export class BotService {
 
       for (const doc of snap.docs) {
         const data = doc.data();
+        const isCoinOrder = data.type === 'achat_coins' || data.type === 'PURCHASE' || (data.amount_coins && data.amount_coins > 0);
+        if (!isCoinOrder) continue;
         const createdAt = data.created_at?.toDate ? data.created_at.toDate() : new Date(data.created_at || Date.now());
 
         // Check if pending for >= 5 minutes

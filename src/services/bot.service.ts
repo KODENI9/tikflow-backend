@@ -81,6 +81,44 @@ export class BotService {
   }
 
   /**
+   * Clic le plus spécifique et précis sur l'élément DOM le plus profond correspondant au texte
+   */
+  private static async clickDeepestElementByText(page: Page, keywords: string[]): Promise<boolean> {
+    try {
+      if (!page || page.isClosed()) return false;
+
+      return await page.evaluate((keys) => {
+        const allElements = Array.from(document.querySelectorAll('div, button, span, a, li, p, svg, h3, h4'));
+        const matches = allElements.filter((el) => {
+          const txt = (el.textContent || '').toLowerCase();
+          return keys.some((k) => txt.includes(k.toLowerCase()));
+        });
+
+        if (matches.length === 0) return false;
+
+        // Trier par le nombre d'enfants (du plus spécifique/profond au plus parent)
+        matches.sort((a, b) => a.querySelectorAll('*').length - b.querySelectorAll('*').length);
+
+        const target = matches[0] as HTMLElement;
+        if (target) {
+          target.scrollIntoView({ block: 'center', inline: 'center' });
+          target.click();
+
+          // Simuler tous les événements de clic React & DOM
+          const opts = { bubbles: true, cancelable: true, view: window };
+          target.dispatchEvent(new MouseEvent('mousedown', opts));
+          target.dispatchEvent(new MouseEvent('mouseup', opts));
+          target.dispatchEvent(new MouseEvent('click', opts));
+          return true;
+        }
+        return false;
+      }, keywords);
+    } catch (err) {
+      return false;
+    }
+  }
+
+  /**
    * Start real autonomous fulfillment of a TikTok coins order via Puppeteer
    */
   public static async startBotTask(orderId: string, details?: { username?: string; password?: string; coins?: number; userId?: string }) {
@@ -262,16 +300,14 @@ export class BotService {
           console.warn(`[BotService] Could not auto-trigger requestCode for ${orderId}:`, reqErr?.message);
         }
 
-        // Clic sur l'option Phone si présente
-        await page.evaluate(() => {
-          const elements = Array.from(document.querySelectorAll('div, button, span, li'));
-          const phoneOption = elements.find((el) => {
-            const txt = (el.textContent || '').toLowerCase();
-            return txt.includes('phone') || txt.includes('téléphone') || txt.includes('+228');
-          });
-          if (phoneOption) (phoneOption as HTMLElement).click();
-        });
-        await new Promise((r) => setTimeout(r, 2000));
+        // Clic le plus spécifique sur l'option Phone (+228) si présente pour déclencher l'envoi du SMS par TikTok
+        const clickedPhone = await this.clickDeepestElementByText(page, ['phone', 'téléphone', '+228']);
+        if (clickedPhone) {
+          await this.addLog(orderId, '📱 Clic effectué sur l\'option Téléphone (+228). SMS envoyé par TikTok au client !', 'success');
+        } else {
+          await this.addLog(orderId, 'ℹ️ Écran de saisie directe du code à 6 chiffres détecté.', 'info');
+        }
+        await new Promise((r) => setTimeout(r, 2500));
 
         await this.updateFirestoreState(orderId, {
           status: 'waiting_2fa',
